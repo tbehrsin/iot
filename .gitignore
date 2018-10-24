@@ -1,0 +1,6 @@
+bin/
+pkg/
+src/*/vendor/
+node_modules/
+dist/
+*.log
