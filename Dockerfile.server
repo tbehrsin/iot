@@ -1,0 +1,5 @@
+FROM drone/ca-certs
+
+ADD iot-server /iot-server
+
+CMD ["/iot-server"]

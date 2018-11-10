@@ -1,0 +1,10 @@
+[Unit]
+Description=Zigbee Gateway stdin
+BindsTo=zigbee-gateway.service
+
+[Socket]
+RemoveOnStop=yes
+ListenStream=/var/run/zigbee-gateway
+
+[Install]
+WantedBy=sockets.target

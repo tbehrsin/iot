@@ -4,10 +4,13 @@ import (
 	"github.com/gorilla/websocket"
 	proxy "github.com/koding/websocketproxy"
 	"iot/api"
-	"iot/plugin"
+	"iot/ble"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 var upgrader = websocket.Upgrader{
@@ -23,20 +26,6 @@ func main() {
 		http.ServeFile(w, r, "dist/renderer.js")
 	})
 
-	for i := 0; i < 4; i++ {
-		if plugin, err := plugin.NewPlugin("src/iot/plugin/hello-world.js"); err != nil {
-			log.Fatal(err)
-		} else {
-			defer plugin.Terminate()
-		}
-	}
-
-	if plugin, err := plugin.NewPlugin("src/iot/plugin/api.js"); err != nil {
-		log.Fatal(err)
-	} else {
-		defer plugin.Terminate()
-	}
-
 	if u, err := url.Parse("ws://localhost:9001/"); err != nil {
 		log.Fatal(err)
 	} else {
@@ -51,9 +40,22 @@ func main() {
 		})
 	}
 
-	if _, err := api.NewAPI(); err != nil {
-		log.Fatal(err)
-	}
+	api, _ := api.NewAPI()
+	defer api.DB.Close()
+	defer api.Mapping.Close()
+	defer api.Stop()
 
-	log.Fatal(http.ListenAndServe(":80", nil))
+	go api.Registry.Load("test")
+
+	go func() {
+		signals := make(chan os.Signal, 1)
+		signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+		<-signals
+		api.Mapping.Close()
+		api.DB.Close()
+		api.Stop()
+		os.Exit(0)
+	}()
+
+	ble.Start()
 }

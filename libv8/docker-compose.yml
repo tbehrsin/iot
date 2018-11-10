@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  build:
+    build: .
+    volumes:
+      - /dev:/dev
+      - ../dist:/dist
+      - ./customize.sh:/source/customize.sh:ro
+      - ./fs:/source/fs:ro
+      - ./scripts:/source/scripts:ro
+    privileged: true
+    network_mode: host
+    tty: true

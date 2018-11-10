@@ -1,0 +1,13 @@
+[Unit]
+Description=Zigbee Gateway
+After=mosquitto.service rpirtscts.service
+
+[Service]
+RestartSec=3
+ExecStart=/usr/bin/zigbee-gateway -n 0 -p /dev/ttyAMA0
+StandardInput=socket
+StandardOutput=journal
+Sockets=zigbee-gateway.socket
+
+[Install]
+WantedBy=multi-user.target

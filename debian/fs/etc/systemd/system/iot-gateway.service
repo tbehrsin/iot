@@ -1,0 +1,11 @@
+[Unit]
+Description=IoT Gateway
+After=network.target
+
+[Service]
+RestartSec=3
+WorkingDirectory=/app/apps
+ExecStart=/usr/bin/iot-gateway
+
+[Install]
+WantedBy=multi-user.target

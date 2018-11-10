@@ -2,6 +2,7 @@ version: '3'
 
 volumes:
   mqtt:
+  dynamodb:
 
 services:
   mqtt:
@@ -11,3 +12,17 @@ services:
       - ./mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
     ports:
       - 127.0.0.1:9001:9001
+  dynamodb:
+    image: amazon/dynamodb-local
+    command:
+      - -jar
+      - DynamoDBLocal.jar
+      - -sharedDb
+      - -delayTransientStatuses
+      - -dbPath
+      - /data
+    volumes:
+      - dynamodb:/data 
+    ports:
+      - 127.0.0.1:8000:8000
+    user: root 

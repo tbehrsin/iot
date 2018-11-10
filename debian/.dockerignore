@@ -1,0 +1,6 @@
+fs/
+fs.dev/
+scripts/
+.gitignore
+customize.sh
+docker-compose.yml

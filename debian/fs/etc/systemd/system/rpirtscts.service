@@ -1,0 +1,10 @@
+[Unit]
+Description=UART RTS/CTS
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/rpirtscts on
+ExecStart=/bin/stty -F /dev/ttyAMA0 crtscts
+
+[Install]
+WantedBy=basic.target

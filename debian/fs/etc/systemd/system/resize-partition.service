@@ -1,0 +1,12 @@
+[Unit]
+Description=Resize Partition
+Before=resize2fs_once.service
+
+[Service]
+Type=oneshot
+ExecStart=/sbin/parted -s /dev/mmcblk0 resizepart 2 100%%
+ExecStart=/sbin/partprobe /dev/mmcblk0
+ExecStart=/bin/systemctl disable resize-partition.service
+
+[Install]
+WantedBy=multi-user.target

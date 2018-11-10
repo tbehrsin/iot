@@ -3,12 +3,12 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 )
 
 func (api *API) HandleAppsCLRUD(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
-		// Create
 		api.HandleAppsAdd(w, r)
 	}
 }
@@ -26,4 +26,10 @@ func (api *API) HandleAppsAdd(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	for name, version := range d {
+		fmt.Printf("%s: %s\n", name, version)
+		if _, err := api.Registry.Add(name, version); err != nil {
+			log.Fatal(err)
+		}
+	}
 }
