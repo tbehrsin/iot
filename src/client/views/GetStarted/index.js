@@ -7,15 +7,14 @@ import {
   View
 } from 'react-native';
 import PropTypes from 'prop-types';
-import { SharedElement } from 'react-native-motion';
-import { Buffer } from 'buffer';
-import { sha256 } from 'react-native-sha256';
-import { generateSecureRandom } from 'react-native-securerandom';
+import { connect } from 'react-redux';
 
 import Button from '../../components/Button';
 import Logo from '../../components/Logo';
 import { constants } from '../../../../app.json';
 import ble from '../../services/ble';
+import * as actions from '../../actions';
+import * as selectors from '../../selectors';
 
 const styles = StyleSheet.create({
   container: {
@@ -69,65 +68,39 @@ class GetStarted extends React.Component {
   }
 
   componentDidMount() {
-    const { logoContainer } = this.context;
+    const { initialize } = this.props;
+    initialize();
 
-    this.onProgress(0, true);
-    Animated.timing(logoContainer.houseOpacity, { toValue: 0 }).start();
-
-
-    this.startScan().catch(err => console.error(err));
+    this.updateProgress(this.props);
   }
 
-  async startScan() {
-    console.info("STARTING SCAN");
-    const device = await ble.start();
-    console.info("CONNECTING");
-    const conn = await device.connect();
-    console.info("SENDING REQUEST");
+  componentWillReceiveProps(nextProps) {
+    this.updateProgress(nextProps);
+  }
 
-    const response = await conn.send({
-      type: 'gateway/CREATE_GATEWAY',
-      payload: {}
-    });
-    console.info('gateway/CREATE_GATEWAY', response);
+  componentWillUnmount() {
+    console.info('unmounting');
+  }
 
-    const payload = {};
-    try {
-      const { response } = await conn.send({
-        type: 'auth/GET_PIN_CODE_SEED',
-        payload: {}
+  updateProgress(props) {
+    const { hasSeed, hasConnection } = props;
+
+    if (this.state.progress < 2 && hasSeed && hasConnection) {
+      Animated.timing(this.progress, { toValue: 2 }).start(() => {
+        setTimeout(() => {
+          Animated.timing(this.progress, { toValue: 3 }).start(() => {
+            const { history } = this.props;
+            history.replace('/pin-entry');
+          });
+          this.setState({ progress: 3 });
+        }, 3000);
       });
+      this.setState({ progress: 2 });
+    } else {
+      this.onProgress(0, true);
 
-      const pin = '123456';
-      const seed = Buffer.from(response.seed, 'base64').toString();
-      const hash = await sha256(`${pin}${seed}`);
-
-      const res = await conn.send({
-        type: 'auth/VERIFY_PIN_CODE',
-        payload: {
-          hash: Buffer.from(hash, 'hex').toString('base64')
-        }
-      });
-
-      console.info('verify pin code', res);
-    } catch(err) {
-      if (err.message === "No PIN code has been set") {
-        const pin = '123456';
-        const seed = await generateSecureRandom(20);
-        const hash = await sha256(`${pin}${Buffer.from(seed).toString()}`);
-
-        const { response } = await conn.send({
-          type: 'auth/SET_PIN_CODE',
-          payload: {
-            hash: Buffer.from(hash, 'hex').toString('base64'),
-            seed: Buffer.from(seed).toString('base64')
-          }
-        });
-
-        console.info('set pin code', response);
-      } else {
-        throw err;
-      }
+      const { logoContainer } = this.context;
+      Animated.timing(logoContainer.houseOpacity, { toValue: 0 }).start();
     }
   }
 
@@ -143,19 +116,12 @@ class GetStarted extends React.Component {
   };
 
   onPressPair = () => {
+    const { pair } = this.props;
+
     Animated.timing(this.progress, { toValue: 1 }).start();
     this.setState({ progress: 1 });
-    setTimeout(() => {
-      Animated.timing(this.progress, { toValue: 2 }).start();
-      this.setState({ progress: 2 });
 
-      setTimeout(() => {
-        Animated.timing(this.progress, { toValue: 3 }).start(() => {
-          const { history } = this.props;
-          history.replace('/pin-entry');
-        });
-      }, 6000);
-    }, 6000);
+    pair();
   };
 
   render() {
@@ -219,4 +185,16 @@ class GetStarted extends React.Component {
   }
 }
 
-export default GetStarted;
+const mapDispatchToProps = (dispatch, props) => ({
+  initialize: () => dispatch(actions.auth.initialize()),
+  pair: () => dispatch(actions.auth.pair()),
+  ...props
+});
+const mapStateToProps = (state, props) => ({
+  isPairing: selectors.auth.isPairing(state),
+  hasConnection: selectors.auth.hasConnection(state),
+  error: selectors.auth.error(state),
+  hasSeed: selectors.auth.hasSeed(state),
+  ...props
+});
+export default connect(mapStateToProps, mapDispatchToProps)(GetStarted);

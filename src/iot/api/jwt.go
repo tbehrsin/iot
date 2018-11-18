@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
+	"iot/errors"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -43,21 +45,42 @@ func (a *API) CreateTokenBLE(in map[string]interface{}) (map[string]interface{},
 }
 
 func (a *API) VerifyTokenMiddleware(w http.ResponseWriter, r *http.Request) *http.Request {
-	if !strings.HasPrefix(strings.ToLower(r.Header["Authorization"][0]), "bearer ") {
-		a.Error(w, fmt.Errorf("must provide bearer token"), http.StatusUnauthorized)
+	var ah []string
+
+	if header, ok := r.Header["Authorization"]; ok {
+		ah = header
+	} else if header, ok := r.Header["X-Authorization"]; ok {
+		ah = header
+	} else if _, ok := r.Header["Upgrade"]; ok {
+		if r.Header["Upgrade"][0] == "websocket" {
+			ah = []string{fmt.Sprintf("Bearer %s", strings.TrimPrefix(r.URL.Path, "/"))}
+		}
+	}
+
+	if ah == nil {
+		log.Println(r.Header)
+		errors.NewUnauthorized("must provide bearer token").Write(w)
 		return nil
 	}
 
-	tokenString := strings.Trim(strings.SplitN(r.Header["Authorization"][0], " ", 2)[1], " ")
+	if len(ah) != 1 {
+		errors.NewUnauthorized("must provide bearer token").Write(w)
+		return nil
+	} else if !strings.HasPrefix(strings.ToLower(ah[0]), "bearer ") {
+		errors.NewUnauthorized("must provide bearer token").Write(w)
+		return nil
+	}
+
+	tokenString := strings.Trim(strings.SplitN(ah[0], " ", 2)[1], " ")
 
 	if gw, err := a.Gateway(); err != nil {
-		a.Error(w, fmt.Errorf("could not load gateway: %+v", err), http.StatusUnauthorized)
+		errors.NewInternalServerError("could not load gateway: %+v", err).Println().Write(w)
 		return nil
 	} else if gw == nil {
-		a.Error(w, fmt.Errorf("could not load gateway: nil"), http.StatusUnauthorized)
+		errors.NewInternalServerError("could not load gateway: nil").Println().Write(w)
 		return nil
 	} else if publicKey := gw.PublicKey(); publicKey == nil {
-		a.Error(w, fmt.Errorf("no public key for gateway"), http.StatusUnauthorized)
+		errors.NewInternalServerError("no public key for gateway").Println().Write(w)
 		return nil
 	} else if token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
@@ -66,10 +89,10 @@ func (a *API) VerifyTokenMiddleware(w http.ResponseWriter, r *http.Request) *htt
 
 		return publicKey, nil
 	}); err != nil {
-		a.Error(w, fmt.Errorf("invalid bearer token: %+v", err), http.StatusUnauthorized)
+		errors.NewUnauthorized("invalid bearer token: %+v", err).Write(w)
 		return nil
 	} else if claims, ok := token.Claims.(jwt.MapClaims); !ok || !token.Valid {
-		a.Error(w, fmt.Errorf("invalid bearer token"), http.StatusUnauthorized)
+		errors.NewUnauthorized("invalid bearer token").Write(w)
 		return nil
 	} else {
 		ctx := context.WithValue(r.Context(), JWTClaimsContextKey, claims)

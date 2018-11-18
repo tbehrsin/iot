@@ -10,6 +10,7 @@ import {
   ScrollView,
   Dimensions
 } from 'react-native';
+import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { SharedElement } from 'react-native-motion';
 import Button from '../../components/Button';
@@ -20,6 +21,9 @@ import HouseImage from './house.png';
 import BackArrowImage from './back-arrow.png';
 import StatusBarBackgroundImage from './status-bar-background.png';
 import NavigationBackgroundImage from './navigation-background.png';
+
+import * as actions from '../../actions';
+import * as selectors from '../../selectors';
 
 const styles = StyleSheet.create({
   container: {
@@ -87,6 +91,13 @@ class Home extends React.Component {
     Animated.timing(logoContainer.translateY, { toValue: -(dim.height - 250) / 2 + 54 * 0.6111 + 23 }).start();
     Animated.timing(logoContainer.translateX, { toValue: dim.width / 2 - 77 * 0.6111 / 2 - 16 }).start();
     Animated.timing(logoContainer.scale, { toValue: 0.6111 }).start();
+
+    const { request } = this.props;
+
+    request('test', {
+      method: 'GET',
+      path: '/api/v1/apps/test/s/2/hello'
+    });
   }
 
   renderBox = (_, i) => {
@@ -135,4 +146,12 @@ class Home extends React.Component {
   }
 }
 
-export default Home;
+
+const mapDispatchToProps = (dispatch, props) => ({
+  request: (key, options) => dispatch(actions.api.request(key, options)),
+  ...props
+});
+const mapStateToProps = (state, props) => ({
+  ...props
+});
+export default connect(mapStateToProps, mapDispatchToProps)(Home);

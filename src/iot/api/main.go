@@ -3,29 +3,32 @@ package api
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/boltdb/bolt"
 	"iot/apps"
 	"iot/ble"
+	iotnet "iot/net"
 	"iot/upnp"
+	"iot/zigbee"
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"sync"
+
+	"github.com/boltdb/bolt"
+	"github.com/gorilla/websocket"
+	proxy "github.com/koding/websocketproxy"
 )
 
 const Server = "https://z3js.net"
 
 type API struct {
+	Network     *iotnet.Network
 	Registry    *apps.Registry
 	DB          *bolt.DB
 	Server      *http.Server
 	Mapping     *upnp.Mapping
 	serverMutex *sync.Mutex
 	httpClient  *http.Client
-}
-
-func (api *API) Error(w http.ResponseWriter, err error, code int) {
-	http.Error(w, err.Error(), code)
 }
 
 func NewAPI() (*API, error) {
@@ -45,7 +48,11 @@ func NewAPI() (*API, error) {
 		})
 	}
 
-	if r, err := apps.NewRegistry(); err != nil {
+	network := iotnet.New()
+	network.AddGateway(zigbee.NewGateway())
+	api.Network = network
+
+	if r, err := apps.NewRegistry(api.Network); err != nil {
 		log.Fatal(err)
 	} else {
 		api.Registry = r
@@ -141,9 +148,26 @@ func (api *API) Stop() error {
 	return err
 }
 
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	CheckOrigin:     func(r *http.Request) bool { return true },
+}
+
 func (api *API) middleware(w http.ResponseWriter, r *http.Request) {
 	if r = api.VerifyTokenMiddleware(w, r); r == nil {
 		return
+	}
+
+	if websocket.IsWebSocketUpgrade(r) {
+		if u, err := url.Parse("ws://localhost:9001/"); err != nil {
+			log.Fatal(err)
+		} else {
+			p := proxy.NewProxy(u)
+			p.Upgrader = &upgrader
+			p.ServeHTTP(w, r)
+			return
+		}
 	}
 
 	http.DefaultServeMux.ServeHTTP(w, r)

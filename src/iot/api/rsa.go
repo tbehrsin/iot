@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"iot/errors"
 	"net/http"
 )
 
@@ -27,7 +28,7 @@ func (a *API) CreateCertificate(in map[string]interface{}) (map[string]interface
 	if g, err := a.Gateway(); err != nil {
 		return nil, err
 	} else if g == nil {
-		return nil, fmt.Errorf("no existing gateway found")
+		return nil, errors.NewNotFound("no existing gateway found")
 	} else {
 		if kp, err := rsa.GenerateKey(rand.Reader, 2048); err != nil {
 			return nil, err
@@ -40,7 +41,7 @@ func (a *API) CreateCertificate(in map[string]interface{}) (map[string]interface
 		}
 
 		if csr, err := x509.CreateCertificateRequest(rand.Reader, req, g.PrivateKey); err != nil {
-			return nil, fmt.Errorf("failed to create certificate request: %+v", err)
+			return nil, errors.NewInternalServerError("failed to create certificate request: %+v", err)
 		} else {
 			c := CreateCertificateRequest{CSR: base64.StdEncoding.EncodeToString(csr)}
 
@@ -66,7 +67,7 @@ func (a *API) CreateCertificate(in map[string]interface{}) (map[string]interface
 		}
 
 		if err := g.UnmarshalCertificates(&r.Certificate); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal certificates: %+v", err)
+			return nil, errors.NewInternalServerError("failed to unmarshal certificates: %+v", err)
 		}
 
 		if err := g.Update(); err != nil {

@@ -1,0 +1,12 @@
+[Unit]
+Description=IoT Gateway
+After=network.target
+
+[Service]
+RestartSec=3
+WorkingDirectory=/app/apps
+Environment="BLUETOOTH_EMULATION=true"
+ExecStart=/usr/bin/iot-gateway
+
+[Install]
+WantedBy=multi-user.target

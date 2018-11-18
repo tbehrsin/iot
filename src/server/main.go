@@ -46,12 +46,28 @@ var publicHandler = api()
 var privateHandler = private()
 
 var redirectHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	if !strings.HasPrefix(strings.ToLower(r.Header["Authorization"][0]), "bearer ") {
+	var ah []string
+	if header, ok := r.Header["Authorization"]; ok {
+		ah = header
+	} else if header, ok := r.Header["X-Authorization"]; ok {
+		ah = header
+	} else if _, ok := r.Header["Sec-Websocket-Protocol"]; ok {
+		if r.Header["Sec-Websocket-Protocol"][0] == "mqtt" {
+			ah = []string{fmt.Sprintf("Bearer %s", strings.TrimPrefix(r.URL.Path, "/"))}
+		}
+	}
+
+	if ah == nil {
 		APIErrorWithStatus(w, fmt.Errorf("must provide bearer token"), http.StatusUnauthorized)
 		return
 	}
 
-	tokenString := strings.Trim(strings.SplitN(r.Header["Authorization"][0], " ", 2)[1], " ")
+	if !strings.HasPrefix(strings.ToLower(ah[0]), "bearer ") {
+		APIErrorWithStatus(w, fmt.Errorf("must provide bearer token"), http.StatusUnauthorized)
+		return
+	}
+
+	tokenString := strings.Trim(strings.SplitN(ah[0], " ", 2)[1], " ")
 
 	if gw, err := GetGatewayFromToken(tokenString); err != nil {
 		APIErrorWithStatus(w, fmt.Errorf("invalid bearer token: %+v", err), http.StatusUnauthorized)
@@ -84,7 +100,13 @@ var redirectHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 		url.Host = fmt.Sprintf("%s.z3js.net:%d", gw.ID, gw.Port)
 
 		w.Header()["Location"] = []string{url.String()}
-		w.WriteHeader(http.StatusTemporaryRedirect)
+
+		if r.Method == "OPTIONS" {
+			w.Header()["Access-Control-Expose-Headers"] = []string{"Location"}
+			w.WriteHeader(http.StatusOK)
+		} else {
+			w.WriteHeader(http.StatusTemporaryRedirect)
+		}
 		w.Write([]byte{})
 	}
 })
@@ -105,12 +127,22 @@ var serverHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	if _, ok := r.Header["Authorization"]; !ok {
-		publicHandler.ServeHTTP(w, r)
+	log.Println(r.Header)
+
+	if _, ok := r.Header["Authorization"]; ok {
+		redirectHandler.ServeHTTP(w, r)
 		return
+	} else if _, ok := r.Header["X-Authorization"]; ok {
+		redirectHandler.ServeHTTP(w, r)
+		return
+	} else if _, ok := r.Header["Sec-Websocket-Protocol"]; ok {
+		if r.Header["Sec-Websocket-Protocol"][0] == "mqtt" {
+			redirectHandler.ServeHTTP(w, r)
+			return
+		}
 	}
 
-	redirectHandler.ServeHTTP(w, r)
+	publicHandler.ServeHTTP(w, r)
 })
 
 var insecureHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

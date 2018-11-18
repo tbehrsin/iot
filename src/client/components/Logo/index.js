@@ -106,7 +106,7 @@ Logo.Container = class LogoContainer extends React.Component {
 
   componentWillReceiveProps(nextProps) {
     const { childOpacity: animation } = this;
-
+    console.info(nextProps);
     if (!nextProps.location) {
       animation.setValue(1);
       return;

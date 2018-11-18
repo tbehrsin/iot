@@ -7,7 +7,6 @@ import thunk from 'redux-thunk';
 import createSagaMiddleware from 'redux-saga';
 
 import reducers from './reducers';
-import sagas from './sagas';
 
 const persistConfig = {
   transforms: [immutableTransform()],
@@ -28,4 +27,7 @@ const persistedReducer = persistReducer(persistConfig, reducer);
 export const store = createStore(persistedReducer, enhancers);
 
 export const persistor = persistStore(store);
-sagas.map(sagaMiddleware.run);
+
+export const initialize = () => {
+  require('./sagas').default.map(sagaMiddleware.run);
+};

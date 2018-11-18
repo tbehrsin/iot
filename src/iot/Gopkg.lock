@@ -18,6 +18,17 @@
   version = "v3.2.0"
 
 [[projects]]
+  digest = "1:184008c955d6a3226b700c13ed0e875a7a051a759618f9bccba9b5c99f17faa5"
+  name = "github.com/eclipse/paho.mqtt.golang"
+  packages = [
+    ".",
+    "packets",
+  ]
+  pruneopts = "UT"
+  revision = "36d01c2b4cbeb3d2a12063e4880ce30800af9560"
+  version = "v1.1.1"
+
+[[projects]]
   branch = "master"
   digest = "1:73ce7cd73bf041d37aa6ffc540ff1c27f0e443b4db269bd0204649358c73a193"
   name = "github.com/emersion/go-upnp-igd"
@@ -68,22 +79,34 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:9a4e9155be261b11c407a7bd210be88aac48ddac3ba3770a28905c64576173c1"
+  digest = "1:903bfe36a71a5a71989fa80285070a8f0c044aa161829ddb8309d7f747d8503f"
   name = "github.com/tbehrsin/v8"
   packages = [
     ".",
     "v8console",
   ]
   pruneopts = "UT"
-  revision = "c66402ad0cb001f3864a39a9a25431dd4cd45706"
+  revision = "6beadc812eeb46c04c5d90129bdabd085ad05656"
 
 [[projects]]
   branch = "master"
-  digest = "1:f22e437d9328275884d0ae018ed0de4c280871c944a5ab332aa37fd71fb5801b"
+  digest = "1:50095e42352dba1c6ab2cec7e03b24fb4b513123f41d4ab4dbd2627c25fe18b8"
+  name = "golang.org/x/net"
+  packages = [
+    "internal/socks",
+    "proxy",
+    "websocket",
+  ]
+  pruneopts = "UT"
+  revision = "adae6a3d119ae4890b46832a2e88a95adc62b8e7"
+
+[[projects]]
+  branch = "master"
+  digest = "1:a62e80faf19c93dcbd7954a26fdb51acbfcb4b7161966adf1de531e593c4834a"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "95b1ffbd15a57cc5abb3f04402b9e8ec0016a52c"
+  revision = "93218def8b18e66adbdab3eca8ec334700329f1f"
 
 [solve-meta]
   analyzer-name = "dep"
@@ -91,6 +114,7 @@
   input-imports = [
     "github.com/boltdb/bolt",
     "github.com/dgrijalva/jwt-go",
+    "github.com/eclipse/paho.mqtt.golang",
     "github.com/emersion/go-upnp-igd",
     "github.com/gorilla/websocket",
     "github.com/koding/websocketproxy",

@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { BleManager as NativeBleManager } from 'react-native-ble-plx';
 import { constants } from '../../../../app.json';
 import { Buffer } from 'buffer';
@@ -48,7 +49,7 @@ class BleConnection {
               delete transactions[id];
 
               if (response.error) {
-                transaction.reject(new Error(response.error));
+                transaction.reject(new ResourceError(response.error));
               } else {
                 transaction.resolve(response);
               }
@@ -102,18 +103,34 @@ class BleConnection {
 
 class BleDevice {
   constructor(device) {
-    BleTable.set(this, { device });
+    BleTable.set(this, { device, connection: null });
   }
 
   async connect() {
-    const { device } = BleTable.get(this);
-    d = await ble.connectToDevice(device.id, { autoConnect: true, requestMTU: 23 });
+    const table = BleTable.get(this);
+
+    if (table.connection) {
+      throw new Error('already connected');
+    }
+    d = await ble.connectToDevice(table.device.id, { autoConnect: true, requestMTU: 23 });
     await d.discoverAllServicesAndCharacteristics();
-    return new BleConnection(d);
+    table.connection = new BleConnection(d);
+    return table.connection;
+  }
+
+  get connection() {
+    const { connection } = BleTable.get(this);
+    return connection;
   }
 }
 
-class BleManager {
+class BleService {
+  constructor() {
+    BleTable.set(this, {
+      device: null
+    });
+  }
+
   start() {
     return new Promise((resolve, reject) => {
       ble.onStateChange((newState) => {
@@ -126,7 +143,16 @@ class BleManager {
                 reject(err);
                 return;
               }
-              resolve(new BleDevice(device));
+
+              const table = BleTable.get(this);
+
+              if (table.device) {
+                return;
+              }
+
+              table.device = new BleDevice(device);
+              this.stop();
+              resolve(table.device);
             }
           );
         }
@@ -137,6 +163,22 @@ class BleManager {
   stop() {
     ble.stopDeviceScan();
   }
+
+  get device() {
+    const { device } = BleTable.get(this);
+    return device;
+  }
+
+  get connection() {
+    return this.device && this.device.connection;
+  }
 }
 
-export default new BleManager();
+export default ({ isEmulator = false }) => {
+  if (isEmulator) {
+    const BleService = require('./index.dev').default;
+    return new BleService();
+  }
+
+  return new BleService();
+};

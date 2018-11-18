@@ -2,11 +2,12 @@ package apps
 
 import (
 	"fmt"
-	"github.com/tbehrsin/v8"
 	"log"
 	"net/http"
 	"strings"
 	"sync"
+
+	"github.com/tbehrsin/v8"
 )
 
 type Route struct {
@@ -18,7 +19,7 @@ type Route struct {
 type Router interface {
 	AppendRoute(route *Route)
 	Routes() []Route
-	Handle(in v8.CallbackArgs) (*v8.Value, error)
+	V8FuncHandle(in v8.CallbackArgs) (*v8.Value, error)
 }
 
 type RouterImpl struct {
@@ -137,7 +138,7 @@ func routeHandler(router Router, routes []Route, in v8.CallbackArgs) (*v8.Value,
 	return nil, nil
 }
 
-func (a *App) Handle(in v8.CallbackArgs) (*v8.Value, error) {
+func (a *App) V8FuncHandle(in v8.CallbackArgs) (*v8.Value, error) {
 	return routeHandler(a, a.Routes(), in)
 }
 
@@ -149,7 +150,7 @@ func (a *App) Routes() []Route {
 	return a.routes
 }
 
-func (r *RouterImpl) Handle(in v8.CallbackArgs) (*v8.Value, error) {
+func (r *RouterImpl) V8FuncHandle(in v8.CallbackArgs) (*v8.Value, error) {
 	return routeHandler(r, r.Routes(), in)
 }
 
@@ -161,7 +162,7 @@ func (r *RouterImpl) Routes() []Route {
 	return r.routes
 }
 
-func (a *App) Use(in v8.CallbackArgs) (*v8.Value, error) {
+func (a *App) V8FuncUse(in v8.CallbackArgs) (*v8.Value, error) {
 	pathname := in.Args[0]
 	handlers := in.Args[1:]
 
@@ -176,7 +177,7 @@ func (a *App) Use(in v8.CallbackArgs) (*v8.Value, error) {
 	return nil, nil
 }
 
-func (r *RouterImpl) Use(in v8.CallbackArgs) (*v8.Value, error) {
+func (r *RouterImpl) V8FuncUse(in v8.CallbackArgs) (*v8.Value, error) {
 	pathname := in.Args[0]
 	handlers := in.Args[1:]
 
@@ -191,7 +192,7 @@ func (r *RouterImpl) Use(in v8.CallbackArgs) (*v8.Value, error) {
 	return nil, nil
 }
 
-func (r *RouterImpl) Get(in v8.CallbackArgs) (*v8.Value, error) {
+func (r *RouterImpl) V8FuncGet(in v8.CallbackArgs) (*v8.Value, error) {
 	pathname := in.Args[0]
 	handlers := in.Args[1:]
 
@@ -229,7 +230,7 @@ func (a *App) NewRequest(req *http.Request, mountPoint string) (*Request, error)
 	}
 }
 
-func (r *Request) Copy(in v8.CallbackArgs) (*v8.Value, error) {
+func (r *Request) V8FuncCopy(in v8.CallbackArgs) (*v8.Value, error) {
 	path := in.Arg(0).String()
 
 	request := &Request{
@@ -265,7 +266,7 @@ func (a *App) NewResponse(res http.ResponseWriter) (*Response, error) {
 	}
 }
 
-func (r *Response) Status(in v8.CallbackArgs) (*v8.Value, error) {
+func (r *Response) V8FuncStatus(in v8.CallbackArgs) (*v8.Value, error) {
 	status := in.Args[0].Float64()
 
 	r.res.WriteHeader(int(status))
@@ -273,7 +274,7 @@ func (r *Response) Status(in v8.CallbackArgs) (*v8.Value, error) {
 	return nil, nil
 }
 
-func (r *Response) Send(in v8.CallbackArgs) (*v8.Value, error) {
+func (r *Response) V8FuncSend(in v8.CallbackArgs) (*v8.Value, error) {
 	data := in.Arg(0)
 
 	if _, err := r.res.Write([]byte(data.String())); err != nil {
@@ -285,7 +286,7 @@ func (r *Response) Send(in v8.CallbackArgs) (*v8.Value, error) {
 	return nil, nil
 }
 
-func (r *Response) Json(in v8.CallbackArgs) (*v8.Value, error) {
+func (r *Response) V8FuncJSON(in v8.CallbackArgs) (*v8.Value, error) {
 	data := in.Arg(0)
 
 	if b, err := data.MarshalJSON(); err != nil {

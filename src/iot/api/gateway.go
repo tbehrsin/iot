@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/boltdb/bolt"
 	"io/ioutil"
+	"iot/errors"
 	"net/http"
 )
 
@@ -234,7 +235,7 @@ func (a *API) CreateGateway(in map[string]interface{}) (map[string]interface{}, 
 	if gw, err := a.Gateway(); err != nil {
 		return nil, err
 	} else if gw != nil {
-		return nil, fmt.Errorf("existing gateway already created")
+		return nil, errors.NewBadRequest("existing gateway already created")
 	}
 
 	if b, err := json.Marshal(map[string]interface{}{"Port": 0}); err != nil {
@@ -275,9 +276,9 @@ func (a *API) UpdateGateway() error {
 	if gw, err := a.Gateway(); err != nil {
 		return err
 	} else if gw == nil {
-		return fmt.Errorf("no gateway created")
+		return errors.NewBadRequest("no gateway created")
 	} else if httpClient := gw.HTTPClient(); httpClient == nil {
-		return fmt.Errorf("failed to create https client")
+		return errors.NewInternalServerError("failed to create https client")
 	} else if b, err := json.Marshal(map[string]interface{}{"Port": gw.Port}); err != nil {
 		return err
 	} else if req, err := http.NewRequest("PUT", fmt.Sprintf("%s/api/v1/gateway/", Server), bytes.NewReader(b)); err != nil {

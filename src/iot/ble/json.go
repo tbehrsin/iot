@@ -2,10 +2,9 @@ package ble
 
 import (
 	"encoding/json"
-	"fmt"
-	"log"
-
 	"github.com/paypal/gatt"
+	"iot/errors"
+	"log"
 )
 
 type JSONRequest struct {
@@ -122,36 +121,23 @@ func (j *JSONService) Write(r gatt.Request, data []byte) (status byte) {
 
 		// call jsonhandler matching type with payload as goroutine
 		if h, ok := JSONHandlers[request.Type]; !ok {
-			out := make(map[string]interface{})
-			out["error"] = fmt.Sprintf("Unknown message type \"%s\"", request.Type)
-			var err error
-			if t.Response, err = json.Marshal(out); err != nil {
-				t.Response = []byte(`{"error": "Error encountered serializing error to json"}`)
-			}
+			t.Response, _ = errors.NewInternalServerError("unknown message type \"%s\"", request.Type).Println().MarshalJSON()
 			c.NotifyChannel <- struct{}{}
 		} else {
 			go func(t *JSONTransaction, r map[string]interface{}, h JSONHandler) {
 				// add response to transaction
 				if response, err := h(r); err != nil {
-					log.Println(r, err)
-					out := make(map[string]interface{})
-					out["error"] = err.Error()
-					if t.Response, err = json.Marshal(out); err != nil {
-						t.Response = []byte(`{"error": "Error encountered serializing error to json"}`)
-					}
+					t.Response, _ = errors.NewInternalServerError(err).Println().MarshalJSON()
 				} else {
 					out := make(map[string]interface{})
-					out["response"] = response
+					out["body"] = response
 					// marshal response to json
 					if d, err := json.Marshal(out); err != nil {
-						log.Println(r, out, err)
-						t.Response = []byte(`{"error": "Error encountered serializing response to json"}`)
+						t.Response, _ = errors.NewInternalServerError("error encountered serializing response to json").Println().MarshalJSON()
 					} else {
 						t.Response = d
 					}
 				}
-
-				log.Println("sending response: ", string(t.Response))
 
 				// notify channel that there are new messages to read
 				c.NotifyChannel <- struct{}{}

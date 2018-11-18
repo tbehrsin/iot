@@ -3,19 +3,23 @@ package apps
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/masterminds/semver"
+	"iot/net"
 	"log"
 	"net/http"
 	"sort"
+
+	"github.com/masterminds/semver"
 )
 
 type Registry struct {
-	apps map[string]*App
+	network *net.Network
+	apps    map[string]*App
 }
 
-func NewRegistry() (*Registry, error) {
+func NewRegistry(n *net.Network) (*Registry, error) {
 	r := &Registry{
-		apps: make(map[string]*App),
+		apps:    make(map[string]*App),
+		network: n,
 	}
 
 	return r, nil

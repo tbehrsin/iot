@@ -2,8 +2,8 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/boltdb/bolt"
+	"iot/errors"
 )
 
 type PINCode struct {
@@ -19,7 +19,7 @@ func (api *API) GetPINCodeSeed(in map[string]interface{}) (map[string]interface{
 	if err := api.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("Auth"))
 		if buf = b.Get([]byte("pin")); buf == nil {
-			return fmt.Errorf("No PIN code has been set")
+			return errors.NewNotFound("no pin code has been set")
 		}
 		return nil
 	}); err != nil {
@@ -40,15 +40,15 @@ func (api *API) SetPINCode(in map[string]interface{}) (map[string]interface{}, e
 	var hash, seed string
 
 	if v, ok := in["hash"]; !ok {
-		return nil, fmt.Errorf("PIN hash not found")
+		return nil, errors.NewBadRequest("pin hash not found")
 	} else if hash, ok = v.(string); !ok {
-		return nil, fmt.Errorf("PIN hash not a string")
+		return nil, errors.NewBadRequest("pin hash not a string")
 	}
 
 	if v, ok := in["seed"]; !ok {
-		return nil, fmt.Errorf("PIN seed not found")
+		return nil, errors.NewBadRequest("pin seed not found")
 	} else if seed, ok = v.(string); !ok {
-		return nil, fmt.Errorf("PIN seed not a string")
+		return nil, errors.NewBadRequest("pin seed not a string")
 	}
 
 	p := PINCode{Hash: hash, Seed: seed}
@@ -73,9 +73,9 @@ func (api *API) VerifyPINCode(in map[string]interface{}) (map[string]interface{}
 	var hash string
 
 	if v, ok := in["hash"]; !ok {
-		return nil, fmt.Errorf("PIN hash not found")
+		return nil, errors.NewBadRequest("pin hash not found")
 	} else if hash, ok = v.(string); !ok {
-		return nil, fmt.Errorf("PIN hash not a string")
+		return nil, errors.NewBadRequest("pin hash not a string")
 	}
 
 	var buf []byte
@@ -83,7 +83,7 @@ func (api *API) VerifyPINCode(in map[string]interface{}) (map[string]interface{}
 	if err := api.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("Auth"))
 		if buf = b.Get([]byte("pin")); buf == nil {
-			return fmt.Errorf("No PIN code has been set")
+			return errors.NewNotFound("no pin code has been set")
 		}
 		return nil
 	}); err != nil {
@@ -98,6 +98,6 @@ func (api *API) VerifyPINCode(in map[string]interface{}) (map[string]interface{}
 	if hash == p.Hash {
 		return api.CreateTokenBLE(map[string]interface{}{})
 	} else {
-		return nil, fmt.Errorf("Incorrect PIN code")
+		return nil, errors.NewUnauthorized("incorrect pin code")
 	}
 }

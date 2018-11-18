@@ -18,7 +18,7 @@ deps:
 	@test -d src/dns && (cd src/dns; GOPATH=$(shell pwd) dep ensure) || true
 	@test -d src/db && (cd src/db; GOPATH=$(shell pwd) dep ensure) || true
 
-bin/iot-gateway: src/iot/*.go src/iot/*/*.go
+bin/iot-gateway: $(shell test -d src/iot && find src/iot -name "*.go" -or -name "*.cc" -or -name "*.h")
 	GOPATH=$(shell pwd) go build -o bin/iot-gateway iot
 
 bin/iot-server: $(shell test -d src/server && find src/server src/db -name "*.go" ! -path "src/server/vendor/*")

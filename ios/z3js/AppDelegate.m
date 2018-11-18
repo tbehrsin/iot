@@ -12,15 +12,19 @@
 
 @implementation AppDelegate
 
-- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
-{
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
   NSURL *jsCodeLocation;
 
   jsCodeLocation = [[RCTBundleURLProvider sharedSettings] jsBundleURLForBundleRoot:@"src/client/index" fallbackResource:nil];
 
+  NSMutableDictionary *initialProperties = [NSMutableDictionary new];
+#if TARGET_IPHONE_SIMULATOR
+  initialProperties[@"isEmulator"] = @(YES);
+#endif
+
   RCTRootView *rootView = [[RCTRootView alloc] initWithBundleURL:jsCodeLocation
                                                       moduleName:@"z3js"
-                                               initialProperties:nil
+                                               initialProperties:initialProperties
                                                    launchOptions:launchOptions];
   rootView.backgroundColor = [[UIColor alloc] initWithRed:245.0f/255.0f green:248.0f/255.0f blue:250.0f/255.0f alpha:1];
 
@@ -31,5 +35,6 @@
   [self.window makeKeyAndVisible];
   return YES;
 }
+
 
 @end

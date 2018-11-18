@@ -169,6 +169,7 @@ func ServeCACertificate(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("503 Internal Server Error"))
 	} else {
+		w.Header()["Content-Type"] = []string{"application/x-x509-ca-cert"}
 		w.WriteHeader(http.StatusOK)
 		pem.Encode(w, &pem.Block{Type: "CERTIFICATE", Bytes: ca.Certificate.Raw})
 	}

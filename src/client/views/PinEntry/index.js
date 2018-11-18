@@ -98,7 +98,6 @@ class PinEntry extends React.Component {
 
   componentDidMount() {
     const { logoContainer } = this.context;
-    console.info(this.props.location);
     this.onProgress(0, true);
     Animated.timing(logoContainer.houseOpacity, { toValue: 0 }).start();
   }
@@ -120,9 +119,8 @@ class PinEntry extends React.Component {
     pin = pin.substring(0, 6);
     this.setState({ pin });
     if (pin.length === 6) {
-      const { history, authSetUser } = this.props;
-      authSetUser({});
-      history.replace('/home');
+      const { authenticate } = this.props;
+      authenticate(pin);
     }
   };
 
@@ -137,13 +135,15 @@ class PinEntry extends React.Component {
   };
 
   render() {
+    const { isAuthenticating, hasPinCode } = this.props;
     const { progress, pin, showPinPad } = this.state;
 
     return (
       <View style={styles.container}>
         <View style={{flex: 1, marginBottom: -380}}/>
         <View style={{flex: 1}}>
-          <Button disabled style={styles.button}>SETUP YOUR SMART HUB</Button>
+          {hasPinCode && <Button disabled style={styles.button}>SETUP YOUR SMART HUB</Button>}
+          {hasPinCode || <Button disabled style={styles.button}>CONNECT TO YOUR SMART HUB</Button>}
           <TouchableWithoutFeedback onPressIn={this.onPressPinInputBox}>
             <View style={styles.pinInputBox}>
               <View style={[styles.pinDigit, {marginLeft: 0}]}><Text style={styles.pinDigitText}>{pin[0]}</Text></View>
@@ -156,31 +156,42 @@ class PinEntry extends React.Component {
           </TouchableWithoutFeedback>
           <View style={{flex: 1}} />
           <View style={styles.blurbContainer}>
-            <Text style={styles.blurb}>
-              Enter a PIN code to make sure you can gain access to this device in the future.
-              This can be shared with your family so they can pair with your <Logo small /> smart
-              hub too. Please keep this PIN code safe.
-            </Text>
+            {hasPinCode && (
+              <Text style={styles.blurb}>
+                Enter a PIN code to make sure you can gain access to this device in the future.
+                This can be shared with your family so they can pair with your <Logo small /> smart
+                hub too. Please keep this PIN code safe.
+              </Text>
+            )}
+            {hasPinCode || (
+              <Text style={styles.blurb}>
+                Enter the PIN code you have used to gain access to this <Logo small /> smart hub.
+              </Text>
+            )}
           </View>
         </View>
-        {showPinPad && (
+        {!isAuthenticating && showPinPad && (
           <View style={StyleSheet.absoluteFill}>
             <TouchableWithoutFeedback onPressIn={() => this.setState({ showPinPad: false })}>
               <View style={StyleSheet.absoluteFill} />
             </TouchableWithoutFeedback>
           </View>
         )}
-        <PinPad onPress={this.onPressNumber} onPressBackspace={this.onPressBackspace} show={showPinPad} />
+        <PinPad onPress={this.onPressNumber} onPressBackspace={this.onPressBackspace} show={!isAuthenticating && showPinPad} />
       </View>
     );
   }
 }
 
 const mapDispatchToProps = (dispatch, props) => ({
-  authSetUser: user => dispatch(actions.authSetUser(user)),
+  authenticate: (pin) => dispatch(actions.auth.authenticate(pin)),
   ...props
 });
 const mapStateToProps = (state, props) => ({
+  isAuthenticating: selectors.auth.isAuthenticating(state),
+  hasConnection: selectors.auth.hasConnection(state),
+  hasSeed: selectors.auth.hasSeed(state),
+  hasPinCode: selectors.auth.hasPinCode(state),
   ...props
 });
 export default connect(mapStateToProps, mapDispatchToProps)(PinEntry);

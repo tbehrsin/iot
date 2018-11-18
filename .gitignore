@@ -1,10 +1,12 @@
 /bin/
+/ios/Pods
 pkg/
 src/*/vendor/
 node_modules/
 dist/
 *.log
 android/app/src/main/assets/
+package-lock.json
 
 # OSX
 #
@@ -62,5 +64,3 @@ buck-out/
 
 # Bundle artifact
 *.jsbundle
-
-
