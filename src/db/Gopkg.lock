@@ -2,52 +2,46 @@
 
 
 [[projects]]
-  digest = "1:b2a3910d27eb06a6bad0ee10aacad85128ec85cc3eeba0d424bfbace0ec1e628"
-  name = "github.com/aws/aws-sdk-go"
+  digest = "1:e4b9fc06bfdcf6dc63e2dbdaeaa600f05b3afa0f73b777ecc3a8cf1e47e561ea"
+  name = "cloud.google.com/go"
   packages = [
-    "aws",
-    "aws/awserr",
-    "aws/awsutil",
-    "aws/client",
-    "aws/client/metadata",
-    "aws/corehandlers",
-    "aws/credentials",
-    "aws/credentials/ec2rolecreds",
-    "aws/credentials/endpointcreds",
-    "aws/credentials/stscreds",
-    "aws/csm",
-    "aws/defaults",
-    "aws/ec2metadata",
-    "aws/endpoints",
-    "aws/request",
-    "aws/session",
-    "aws/signer/v4",
-    "internal/ini",
-    "internal/sdkio",
-    "internal/sdkrand",
-    "internal/sdkuri",
-    "internal/shareddefaults",
-    "private/protocol",
-    "private/protocol/json/jsonutil",
-    "private/protocol/jsonrpc",
-    "private/protocol/query",
-    "private/protocol/query/queryutil",
-    "private/protocol/rest",
-    "private/protocol/xml/xmlutil",
-    "service/dynamodb",
-    "service/dynamodb/dynamodbattribute",
-    "service/sts",
+    "compute/metadata",
+    "datastore",
+    "iam",
+    "internal",
+    "internal/fields",
+    "internal/trace",
+    "internal/version",
+    "kms/apiv1",
   ]
   pruneopts = "UT"
-  revision = "f76d9803fd695eebf74cb23c460287fa496efc21"
-  version = "v1.15.63"
+  revision = "0ebda48a7f143b1cce9eb37a8c1106ac762a3430"
+  version = "v0.34.0"
 
 [[projects]]
-  digest = "1:e22af8c7518e1eab6f2eab2b7d7558927f816262586cd6ed9f349c97a6c285c4"
-  name = "github.com/jmespath/go-jmespath"
+  digest = "1:c6892ebe33775a89a6da197bafd468682bb8350b4ae235aed42fa531d3a9f3ca"
+  name = "github.com/golang/protobuf"
+  packages = [
+    "proto",
+    "protoc-gen-go/descriptor",
+    "ptypes",
+    "ptypes/any",
+    "ptypes/duration",
+    "ptypes/struct",
+    "ptypes/timestamp",
+    "ptypes/wrappers",
+  ]
+  pruneopts = "UT"
+  revision = "aa810b61a9c79d51363740d207bb46cf8e620ed5"
+  version = "v1.2.0"
+
+[[projects]]
+  digest = "1:e04cc716992a302cacf6d726409a05aa9546241998b24356d6dd0f01bc5a374e"
+  name = "github.com/googleapis/gax-go"
   packages = ["."]
   pruneopts = "UT"
-  revision = "0b12d6b5"
+  revision = "b001040cd31805261cbd978842099e326dfa857b"
+  version = "v2.0.2"
 
 [[projects]]
   digest = "1:2e76a73cb51f42d63a2a1a85b3dc5731fd4faf6821b434bd0ef2c099186031d6"
@@ -57,15 +51,198 @@
   revision = "15d26544def341f036c5f8dca987a4cbe575032c"
   version = "v1.2.1"
 
+[[projects]]
+  digest = "1:381ccafa5e013a0e3f9b54604ae522a73b9533a375a6a714b483c634d5e927ab"
+  name = "go.opencensus.io"
+  packages = [
+    ".",
+    "exemplar",
+    "internal",
+    "internal/tagencoding",
+    "plugin/ocgrpc",
+    "plugin/ochttp",
+    "plugin/ochttp/propagation/b3",
+    "stats",
+    "stats/internal",
+    "stats/view",
+    "tag",
+    "trace",
+    "trace/internal",
+    "trace/propagation",
+    "trace/tracestate",
+  ]
+  pruneopts = "UT"
+  revision = "b7bf3cdb64150a8c8c53b769fdeb2ba581bd4d4b"
+  version = "v0.18.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:29fe5460430a338b64f4a0259a6c59a1e2350bbcff54fa66f906fa8d10515c4d"
+  name = "golang.org/x/net"
+  packages = [
+    "context",
+    "context/ctxhttp",
+    "http/httpguts",
+    "http2",
+    "http2/hpack",
+    "idna",
+    "internal/timeseries",
+    "trace",
+  ]
+  pruneopts = "UT"
+  revision = "610586996380ceef02dd726cc09df7e00a3f8e56"
+
+[[projects]]
+  branch = "master"
+  digest = "1:23443edff0740e348959763085df98400dcfd85528d7771bb0ce9f5f2754ff4a"
+  name = "golang.org/x/oauth2"
+  packages = [
+    ".",
+    "google",
+    "internal",
+    "jws",
+    "jwt",
+  ]
+  pruneopts = "UT"
+  revision = "d668ce993890a79bda886613ee587a69dd5da7a6"
+
+[[projects]]
+  branch = "master"
+  digest = "1:e52bdb638551e9a3d12b62c90ede03f09dc19348902cb6acd3aad8d0f45d1d5a"
+  name = "golang.org/x/sys"
+  packages = ["unix"]
+  pruneopts = "UT"
+  revision = "2a47403f2ae58167c4d75973960ccc62b28cb0d8"
+
+[[projects]]
+  digest = "1:a2ab62866c75542dd18d2b069fec854577a20211d7c0ea6ae746072a1dccdd18"
+  name = "golang.org/x/text"
+  packages = [
+    "collate",
+    "collate/build",
+    "internal/colltab",
+    "internal/gen",
+    "internal/tag",
+    "internal/triegen",
+    "internal/ucd",
+    "language",
+    "secure/bidirule",
+    "transform",
+    "unicode/bidi",
+    "unicode/cldr",
+    "unicode/norm",
+    "unicode/rangetable",
+  ]
+  pruneopts = "UT"
+  revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
+  version = "v0.3.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:f643d16065adf556a17bd667890e64011f3ed179e9178202d69df4acd96edc7c"
+  name = "google.golang.org/api"
+  packages = [
+    "googleapi",
+    "googleapi/internal/uritemplates",
+    "googleapi/transport",
+    "internal",
+    "iterator",
+    "option",
+    "transport",
+    "transport/grpc",
+    "transport/http",
+    "transport/http/internal/propagation",
+  ]
+  pruneopts = "UT"
+  revision = "1a5ef82f9af45ef51c486291ef2b0a16d82fdb95"
+
+[[projects]]
+  digest = "1:b13819327be647014031c6a194299da87ca35313bfc01fdc1da7bd3ddf08cbce"
+  name = "google.golang.org/appengine"
+  packages = [
+    ".",
+    "internal",
+    "internal/app_identity",
+    "internal/base",
+    "internal/datastore",
+    "internal/log",
+    "internal/modules",
+    "internal/remote_api",
+    "internal/socket",
+    "internal/urlfetch",
+    "socket",
+    "urlfetch",
+  ]
+  pruneopts = "UT"
+  revision = "4a4468ece617fc8205e99368fa2200e9d1fad421"
+  version = "v1.3.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:2a9a5ebb0abd19918481ed16eabf2a88f85bae8385e9afebb0cad6c392f6fd2a"
+  name = "google.golang.org/genproto"
+  packages = [
+    "googleapis/api/annotations",
+    "googleapis/cloud/kms/v1",
+    "googleapis/datastore/v1",
+    "googleapis/iam/v1",
+    "googleapis/rpc/code",
+    "googleapis/rpc/status",
+    "googleapis/type/latlng",
+    "protobuf/field_mask",
+  ]
+  pruneopts = "UT"
+  revision = "bd91e49a0898e27abb88c339b432fa53d7497ac0"
+
+[[projects]]
+  digest = "1:3fc54ad826c0183f803bb97e0927dfc05fcb7b7a6ddabed646ee8184d861fa9b"
+  name = "google.golang.org/grpc"
+  packages = [
+    ".",
+    "balancer",
+    "balancer/base",
+    "balancer/roundrobin",
+    "binarylog/grpc_binarylog_v1",
+    "codes",
+    "connectivity",
+    "credentials",
+    "credentials/internal",
+    "credentials/oauth",
+    "encoding",
+    "encoding/proto",
+    "grpclog",
+    "internal",
+    "internal/backoff",
+    "internal/binarylog",
+    "internal/channelz",
+    "internal/envconfig",
+    "internal/grpcrand",
+    "internal/grpcsync",
+    "internal/syscall",
+    "internal/transport",
+    "keepalive",
+    "metadata",
+    "naming",
+    "peer",
+    "resolver",
+    "resolver/dns",
+    "resolver/passthrough",
+    "stats",
+    "status",
+    "tap",
+  ]
+  pruneopts = "UT"
+  revision = "df014850f6dee74ba2fc94874043a9f3f75fbfd8"
+  version = "v1.17.0"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "github.com/aws/aws-sdk-go/aws",
-    "github.com/aws/aws-sdk-go/aws/session",
-    "github.com/aws/aws-sdk-go/service/dynamodb",
-    "github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute",
+    "cloud.google.com/go/datastore",
+    "cloud.google.com/go/kms/apiv1",
     "github.com/rs/xid",
+    "google.golang.org/genproto/googleapis/cloud/kms/v1",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -1,0 +1,11 @@
+[Unit]
+Description=Behrsin IoT DNS Server
+
+[Service]
+RestartSec=3
+ExecStartPre=/usr/bin/docker pull gcr.io/behrsin-iot/iot-dns:latest
+ExecStart=/usr/bin/docker run --rm -p 0.0.0.0:53:53/udp -p 0.0.0.0:53:53/tcp --name iot-dns gcr.io/behrsin-iot/iot-dns:latest
+ExecStop=/usr/bin/docker rm -f iot-dns
+
+[Install]
+WantedBy=multi-user.target

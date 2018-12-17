@@ -1,0 +1,11 @@
+[Unit]
+Description=Behrsin IoT Web Server
+
+[Service]
+RestartSec=3
+ExecStartPre=/usr/bin/docker pull gcr.io/behrsin-iot/iot-server:latest
+ExecStart=/usr/bin/docker run --rm -v /data/iot-server:/data -p 0.0.0.0:80:80/tcp -p 0.0.0.0:443:443/tcp --name iot-server gcr.io/behrsin-iot/iot-server:latest
+ExecStop=/usr/bin/docker rm -f iot-server
+
+[Install]
+WantedBy=multi-user.target

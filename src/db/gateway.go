@@ -1,23 +1,23 @@
 package db
 
 import (
+	"context"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base64"
 	"fmt"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-	"github.com/rs/xid"
 	"log"
 	"strings"
+
+	"cloud.google.com/go/datastore"
+	"github.com/rs/xid"
 )
 
 type Gateway struct {
-	ID        string
-	Address   string
-	Port      uint16
-	PublicKey string
+	ID        string `datastore:"id"`
+	Address   string `datastore:"address,noindex"`
+	Port      int    `datastore:"port,noindex"`
+	PublicKey string `datastore:"publicKey,noindex"`
 }
 
 func (g *Gateway) FQDN() string {
@@ -29,19 +29,11 @@ func (g *Gateway) FQDNWithoutDot() string {
 }
 
 func (g *Gateway) Update() error {
-	if av, err := dynamodbattribute.MarshalMap(g); err != nil {
+	k := datastore.NameKey("Gateway", g.ID, nil)
+
+	c := context.Background()
+	if _, err := db.Put(c, k, g); err != nil {
 		return err
-	} else {
-		input := &dynamodb.PutItemInput{
-			TableName: aws.String("Gateways"),
-			Item:      av,
-		}
-
-		log.Printf("updating gateway %s\n", g.ID)
-
-		if _, err := db.PutItem(input); err != nil {
-			return err
-		}
 	}
 
 	return nil
@@ -65,53 +57,29 @@ func (g *Gateway) MarshalPublicKey(publicKey *rsa.PublicKey) error {
 }
 
 func GetGateway(id string) (*Gateway, error) {
-	input := &dynamodb.GetItemInput{
-		TableName: aws.String("Gateways"),
-		Key: map[string]*dynamodb.AttributeValue{
-			"ID": {
-				S: aws.String(id),
-			},
-		},
-	}
-
+	k := datastore.NameKey("Gateway", id, nil)
+	log.Println(id, k)
 	gw := new(Gateway)
 
-	if result, err := db.GetItem(input); err != nil {
-		return nil, err
-	} else if result.Item == nil {
-		return nil, nil
-	} else if err := dynamodbattribute.UnmarshalMap(result.Item, gw); err != nil {
+	c := context.Background()
+	if err := db.Get(c, k, gw); err != nil {
 		return nil, err
 	}
 
 	return gw, nil
 }
 
-func CreateGateway(address string, port uint16) (*Gateway, error) {
+func CreateGateway(address string, port int) (*Gateway, error) {
 	id := xid.New()
-
-	input := &dynamodb.PutItemInput{
-		TableName: aws.String("Gateways"),
-		Item: map[string]*dynamodb.AttributeValue{
-			"ID": {
-				S: aws.String(id.String()),
-			},
-			"Address": {
-				S: aws.String(address),
-			},
-			"Port": {
-				N: aws.String(fmt.Sprintf("%d", port)),
-			},
-		},
+	gw := &Gateway{
+		ID:      id.String(),
+		Address: address,
+		Port:    port,
 	}
+	k := datastore.NameKey("Gateway", gw.ID, nil)
 
-	gw := new(Gateway)
-
-	log.Printf("creating gateway %s\n", id.String())
-
-	if _, err := db.PutItem(input); err != nil {
-		return nil, err
-	} else if err := dynamodbattribute.UnmarshalMap(input.Item, gw); err != nil {
+	c := context.Background()
+	if _, err := db.Put(c, k, gw); err != nil {
 		return nil, err
 	}
 

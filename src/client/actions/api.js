@@ -11,7 +11,9 @@ import {
 
   API_DISCONNECT_BEGIN,
   API_DISCONNECT_END,
-  API_DISCONNECT_ERROR
+  API_DISCONNECT_ERROR,
+
+  API_STATE_CONNECTED
 } from '../constants';
 import * as selectors from '../selectors';
 
@@ -24,6 +26,7 @@ export const request = (key, { method = 'GET', path = '/', query = {}, body = nu
   const token = selectors.auth.getToken(getState());
 
   try {
+    console.info(`https://z3js.net${path}`, method, body);
     const response = await fetch(`https://z3js.net${path}`, {
       method,
       headers: {
@@ -32,6 +35,7 @@ export const request = (key, { method = 'GET', path = '/', query = {}, body = nu
       },
       body: body == null ? null : JSON.stringify(body)
     });
+    console.info(response);
     const json = await response.json();
 
     if (json.error) {
@@ -86,7 +90,11 @@ export const connect = () => async (dispatch, getState) => {
   }
 };
 
-export const disconnect = () => async (dispatch) => {
+export const disconnect = () => async (dispatch, getState) => {
+  if (selectors.api.connectionState(getState()) !== API_STATE_CONNECTED) {
+    return;
+  }
+
   dispatch({
     type: API_DISCONNECT_BEGIN
   });
@@ -98,6 +106,7 @@ export const disconnect = () => async (dispatch) => {
       type: API_DISCONNECT_END
     });
   } catch (error) {
+    console.error(error);
     dispatch({
       type: API_DISCONNECT_ERROR,
       payload: { error }

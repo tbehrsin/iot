@@ -46,14 +46,10 @@
 		<false/>
 		<key>NSExceptionDomains</key>
 		<dict>
-			<key>z3js.net</key>
+			<key>ca.z3js.com</key>
 			<dict>
-				<key>NSIncludesSubdomains</key>
-				<true/>
-				<key>NSExceptionRequiresForwardSecrecy</key>
-				<false/>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<false/>
+				<true/>
 			</dict>
 			<key>iot-gateway.local</key>
 			<dict>

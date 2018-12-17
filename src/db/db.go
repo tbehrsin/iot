@@ -1,11 +1,26 @@
 package db
 
 import (
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"context"
+
+	"cloud.google.com/go/datastore"
 )
 
-var db = dynamodb.New(session.New(), aws.NewConfig())
+var db *datastore.Client
 
-const Domain = "z3js.net."
+const Domain = "iot.behrsin.com."
+const Organization = "Behrsin Ltd"
+const CALocality = "Manchester"
+const CACountry = "GB"
+const CACommonName = "Behrsin IoT CA"
+const ValuesKeyName = "projects/behrsin-iot/locations/europe-west2/keyRings/iot/cryptoKeys/iot-datastore"
+
+func Initialize() (err error) {
+	c := context.Background()
+
+	if db, err = datastore.NewClient(c, "behrsin-iot"); err != nil {
+		return err
+	}
+
+	return nil
+}

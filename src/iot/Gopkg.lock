@@ -78,15 +78,12 @@
   revision = "4ae819d591cfc94c496c45deb55928469542beec"
 
 [[projects]]
-  branch = "master"
-  digest = "1:903bfe36a71a5a71989fa80285070a8f0c044aa161829ddb8309d7f747d8503f"
-  name = "github.com/tbehrsin/v8"
-  packages = [
-    ".",
-    "v8console",
-  ]
+  digest = "1:2e76a73cb51f42d63a2a1a85b3dc5731fd4faf6821b434bd0ef2c099186031d6"
+  name = "github.com/rs/xid"
+  packages = ["."]
   pruneopts = "UT"
-  revision = "6beadc812eeb46c04c5d90129bdabd085ad05656"
+  revision = "15d26544def341f036c5f8dca987a4cbe575032c"
+  version = "v1.2.1"
 
 [[projects]]
   branch = "master"
@@ -98,15 +95,15 @@
     "websocket",
   ]
   pruneopts = "UT"
-  revision = "adae6a3d119ae4890b46832a2e88a95adc62b8e7"
+  revision = "610586996380ceef02dd726cc09df7e00a3f8e56"
 
 [[projects]]
   branch = "master"
-  digest = "1:a62e80faf19c93dcbd7954a26fdb51acbfcb4b7161966adf1de531e593c4834a"
+  digest = "1:e52bdb638551e9a3d12b62c90ede03f09dc19348902cb6acd3aad8d0f45d1d5a"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "93218def8b18e66adbdab3eca8ec334700329f1f"
+  revision = "2a47403f2ae58167c4d75973960ccc62b28cb0d8"
 
 [solve-meta]
   analyzer-name = "dep"
@@ -120,8 +117,7 @@
     "github.com/koding/websocketproxy",
     "github.com/masterminds/semver",
     "github.com/paypal/gatt",
-    "github.com/tbehrsin/v8",
-    "github.com/tbehrsin/v8/v8console",
+    "github.com/rs/xid",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

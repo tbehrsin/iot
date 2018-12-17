@@ -1,28 +1,46 @@
 package zigbee
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"iot/net"
 	"strconv"
 	"strings"
+
+	"github.com/behrsin/go-v8"
 )
 
-type state uint8
+type State uint8
 
-func (s state) MarshalV8() interface{} {
+func (s State) MarshalV8() interface{} {
 	return s.String()
 }
 
-type command struct {
-	Command string `json:"command", v8:"command"`
-	Delay   uint32 `json:"postDelayMs", v8:"delay"`
+type Command struct {
+	Command string `json:"commandcli" v8:"command"`
+	Delay   uint32 `json:"postDelayMs" v8:"delay"`
 }
 
 type EUI64 net.EUI64
 
+func (e EUI64) String() string {
+	ne := net.EUI64(e)
+	return fmt.Sprintf("0x%s", ne.String())
+}
+
+func (e EUI64) bracketString() string {
+	ne := net.EUI64(e)
+	return fmt.Sprintf("{%s}", ne.String())
+}
+
+func (e EUI64) MarshalV8() interface{} {
+	ne := net.EUI64(e)
+	return ne.String()
+}
+
 func (e *EUI64) MarshalJSON() ([]byte, error) {
-	s := fmt.Sprintf("%s", net.EUI64(*e).String())
+	s := e.String()
 	return json.Marshal(s)
 }
 
@@ -41,20 +59,20 @@ func (e *EUI64) UnmarshalJSON(b []byte) error {
 	}
 }
 
-type _uint16 struct {
-	value uint16
+type UInt16 struct {
+	Value uint16
 }
 
-func (n _uint16) String() string {
-	return fmt.Sprintf("%04X", n.value)
+func (n UInt16) String() string {
+	return fmt.Sprintf("0x%04X", n.Value)
 }
 
-func (n *_uint16) MarshalJSON() ([]byte, error) {
-	s := fmt.Sprintf("0x%s", n.String())
+func (n *UInt16) MarshalJSON() ([]byte, error) {
+	s := n.String()
 	return json.Marshal(s)
 }
 
-func (n *_uint16) UnmarshalJSON(b []byte) error {
+func (n *UInt16) UnmarshalJSON(b []byte) error {
 	var s string
 	if err := json.Unmarshal(b, &s); err != nil {
 		return err
@@ -63,29 +81,33 @@ func (n *_uint16) UnmarshalJSON(b []byte) error {
 	if v, err := strconv.ParseUint(strings.TrimPrefix(s, "0x"), 16, 16); err != nil {
 		return err
 	} else {
-		n.value = uint16(v)
+		n.Value = uint16(v)
 		return nil
 	}
 }
 
-func (n _uint16) MarshalV8() interface{} {
-	return n.value
+func (n UInt16) MarshalV8() interface{} {
+	return n.Value
 }
 
-type _uint8 struct {
-	value uint8
+func V8Uint16(v *v8.Value) UInt16 {
+	return UInt16{uint16(v.Float64())}
 }
 
-func (n _uint8) String() string {
-	return fmt.Sprintf("%02X", n.value)
+type UInt8 struct {
+	Value uint8
 }
 
-func (n *_uint8) MarshalJSON() ([]byte, error) {
-	s := fmt.Sprintf("0x%s", n.String())
+func (n UInt8) String() string {
+	return fmt.Sprintf("0x%02X", n.Value)
+}
+
+func (n *UInt8) MarshalJSON() ([]byte, error) {
+	s := n.String()
 	return json.Marshal(s)
 }
 
-func (n *_uint8) UnmarshalJSON(b []byte) error {
+func (n *UInt8) UnmarshalJSON(b []byte) error {
 	var s string
 	if err := json.Unmarshal(b, &s); err != nil {
 		return err
@@ -94,87 +116,182 @@ func (n *_uint8) UnmarshalJSON(b []byte) error {
 	if v, err := strconv.ParseUint(strings.TrimPrefix(s, "0x"), 16, 8); err != nil {
 		return err
 	} else {
-		n.value = uint8(v)
+		n.Value = uint8(v)
 		return nil
 	}
 }
 
-func (n _uint8) MarshalV8() interface{} {
-	return n.value
+func (n UInt8) MarshalV8() interface{} {
+	return n.Value
 }
 
-type nodeID struct {
-	_uint16
+func V8Uint8(v *v8.Value) UInt8 {
+	return UInt8{uint8(v.Float64())}
 }
 
-type clusterID struct {
-	_uint16
+type NodeID struct {
+	UInt16
 }
 
-type deviceType struct {
-	_uint16
+type ClusterID struct {
+	UInt16
+}
+
+type DeviceType struct {
+	UInt16
 }
 
 const (
-	clusterTypeIn  string = "In"
-	clusterTypeOut        = "Out"
+	ClusterTypeIn  string = "In"
+	ClusterTypeOut        = "Out"
 )
 
-type clusterType struct {
-	out bool
+type ClusterType struct {
+	Out bool
 }
 
-func (c clusterType) String() string {
-	if c.out {
+func (c ClusterType) String() string {
+	if c.Out {
 		return "out"
 	} else {
 		return "in"
 	}
 }
 
-func (c *clusterType) MarshalJSON() ([]byte, error) {
-	if c.out {
-		return json.Marshal(clusterTypeOut)
+func (c *ClusterType) MarshalJSON() ([]byte, error) {
+	if c.Out {
+		return json.Marshal(ClusterTypeOut)
 	} else {
-		return json.Marshal(clusterTypeIn)
+		return json.Marshal(ClusterTypeIn)
 	}
 }
 
-func (c *clusterType) UnmarshalJSON(b []byte) error {
+func (c *ClusterType) UnmarshalJSON(b []byte) error {
 	var s string
 	if err := json.Unmarshal(b, &s); err != nil {
 		return err
 	}
 
-	c.out = s == clusterTypeOut
+	c.Out = s == ClusterTypeOut
 	return nil
 }
 
-func (c clusterType) MarshalV8() interface{} {
+func V8ClusterType(clusterType *v8.Value) ClusterType {
+	c := ClusterType{
+		Out: clusterType.String() == "out",
+	}
+	return c
+}
+
+func (c ClusterType) MarshalV8() interface{} {
 	return c.String()
 }
 
-type endpoint uint8
+type Endpoint uint8
 
-func (e endpoint) String() string {
-	return fmt.Sprintf("%02X", uint8(e))
+func (e Endpoint) String() string {
+	return fmt.Sprintf("0x%02X", int(e))
 }
 
-type deviceEndpointInfo struct {
+type DeviceEndpointInfo struct {
 	EUI64    EUI64    `json:"eui64" v8:"eui64"`
-	Endpoint endpoint `json:"endpoint" v8:"endpoint"`
+	Endpoint Endpoint `json:"endpoint" v8:"id"`
 }
 
-type deviceEndpoint struct {
-	deviceEndpointInfo
-	Clusters []cluster `json:"clusterInfo" v8:"clusters"`
+type DeviceEndpoint struct {
+	DeviceEndpointInfo
+	Clusters []Cluster `json:"clusterInfo" v8:"clusters"`
 }
 
-func (e *deviceEndpoint) EndpointInfo() *deviceEndpointInfo {
-	return &deviceEndpointInfo{e.EUI64, e.Endpoint}
+func (d *DeviceEndpoint) Match(cluster Cluster) bool {
+	for _, c := range d.Clusters {
+		if c.Type == cluster.Type && c.ID == cluster.ID {
+			return true
+		}
+	}
+	return false
 }
 
-type cluster struct {
-	Type clusterType `json:"clusterType" v8:"type"`
-	ID   clusterID   `json:"clusterId" v8:"id"`
+func (d *DeviceEndpoint) MatchAll(clusters []Cluster) bool {
+	for _, cluster := range clusters {
+		if !d.Match(cluster) {
+			return false
+		}
+	}
+	return true
+}
+
+func (d *DeviceEndpoint) V8MatchAll(vclusters *v8.Value) (bool, error) {
+	if vlength, err := vclusters.Get("length"); err != nil {
+		return false, err
+	} else if length := int(vlength.Int64()); length > 0 {
+		clusters := make([]Cluster, length)
+
+		for i := 0; i < length; i++ {
+			var clusterId ClusterID
+			var clusterType ClusterType
+
+			if vcluster, err := vclusters.GetIndex(i); err != nil {
+				return false, err
+			} else if vclusterId, err := vcluster.Get("id"); err != nil {
+				return false, err
+			} else if vclusterType, err := vcluster.Get("type"); err != nil {
+				return false, err
+			} else {
+				clusterId = ClusterID{UInt16{uint16(vclusterId.Int64())}}
+				clusterType = V8ClusterType(vclusterType)
+
+				clusters[i] = Cluster{clusterType, clusterId}
+			}
+		}
+
+		return d.MatchAll(clusters), nil
+	}
+
+	return true, nil
+}
+
+func (e *DeviceEndpoint) EndpointInfo() *DeviceEndpointInfo {
+	return &DeviceEndpointInfo{e.EUI64, e.Endpoint}
+}
+
+type Cluster struct {
+	Type ClusterType `json:"clusterType" v8:"type"`
+	ID   ClusterID   `json:"clusterId" v8:"id"`
+}
+
+type AttributeID struct {
+	UInt16
+}
+
+type CommandID struct {
+	UInt8
+}
+
+type CommandData []byte
+
+func (c CommandData) String() string {
+	return fmt.Sprintf("0x%s", strings.ToUpper(hex.EncodeToString(c[:])))
+}
+
+func (c CommandData) bracketString() string {
+	return fmt.Sprintf("{%s}", strings.ToUpper(hex.EncodeToString(c[:])))
+}
+
+func (c *CommandData) MarshalJSON() ([]byte, error) {
+	s := c.String()
+	return json.Marshal(s)
+}
+
+func (c *CommandData) UnmarshalJSON(b []byte) error {
+	var s string
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	} else if b, err := hex.DecodeString(strings.TrimPrefix(s, "0x")); err != nil {
+		return err
+	} else {
+		cb := CommandData(b)
+		*c = append(*c, cb...)
+		return nil
+	}
 }

@@ -8,21 +8,33 @@ import (
 	"net/http"
 	"sort"
 
+	"github.com/behrsin/go-v8"
 	"github.com/masterminds/semver"
 )
 
 type Registry struct {
-	network *net.Network
-	apps    map[string]*App
+	network   *net.Network
+	isolate   *v8.Isolate
+	inspector *v8.Inspector
+	apps      map[string]*App
 }
 
-func NewRegistry(n *net.Network) (*Registry, error) {
+func NewRegistry(n *net.Network, inspectorCallbacks v8.InspectorCallbacks) (*Registry, error) {
+	isolate := v8.NewIsolate()
+	inspector := isolate.NewInspector(inspectorCallbacks)
+
 	r := &Registry{
-		apps:    make(map[string]*App),
-		network: n,
+		apps:      make(map[string]*App),
+		isolate:   isolate,
+		inspector: inspector,
+		network:   n,
 	}
 
 	return r, nil
+}
+
+func (r *Registry) Inspector() *v8.Inspector {
+	return r.inspector
 }
 
 func (r *Registry) ServeHTTP(res http.ResponseWriter, req *http.Request) {

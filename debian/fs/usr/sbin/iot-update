@@ -1,0 +1,23 @@
+#!/bin/bash
+
+exec >/var/log/iot-update.log 2>&1
+
+log() {
+  echo $(date "+%Y-%m-%d %H:%M:%S"): $@
+}
+
+TARBALL=$1
+
+log Starting update ${TARBALL}
+
+log Switching to runlevel 1
+init 1
+
+log Deleting files
+tar xzOf ${TARBALL} ._DELETE | xargs rm -Rvf
+
+log Extracting files
+tar xvzPf ${TARBALL} --exclude ._DELETE --exclude /usr/sbin/iot-update
+
+log Rebooting
+reboot

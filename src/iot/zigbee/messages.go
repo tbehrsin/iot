@@ -1,48 +1,72 @@
 package zigbee
 
-type heartbeatMessage struct {
+type HeartbeatMessage struct {
 	NetworkUp bool `json:"networkUp"`
 }
 
-type deviceListMessage struct {
-	Devices []deviceMessage `json:"devices"`
+type DeviceListMessage struct {
+	Devices []DeviceMessage `json:"devices"`
 }
 
-type settingsMessage struct {
+type RelayListMessage struct {
+}
+
+type SettingsMessage struct {
 	NCPStackVersion string `json:"ncpStackVersion"`
 	NetworkUp       bool   `json:"networkUp"`
 }
 
-type deviceMessage struct {
-	NodeID               nodeID         `json:"nodeId"`
-	State                state          `json:"deviceState"`
-	Type                 deviceType     `json:"type"`
+type DeviceMessage struct {
+	NodeID               NodeID         `json:"nodeId"`
+	State                State          `json:"deviceState"`
+	Type                 DeviceType     `json:"type"`
 	TimeSinceLastMessage uint32         `json:"timeSinceLastMessage"`
-	Endpoint             deviceEndpoint `json:"deviceEndpoint"`
+	Endpoint             DeviceEndpoint `json:"deviceEndpoint"`
 }
 
-type deviceLeftMessage struct {
+type DeviceLeftMessage struct {
 	EUI64 EUI64 `json:"eui64"`
 }
 
-type deviceStateChangeMessage struct {
+type DeviceStateChangeMessage struct {
 	EUI64 EUI64 `json:"eui64"`
-	State state `json:"deviceState"`
+	State State `json:"deviceState"`
 }
 
-type commandMessage struct {
-	Commands []command `json:"commands"`
+type OTAEventMessage struct {
 }
 
-type publishStateMessage struct {
+type ExecutedMessage struct {
+	Command string `json:"command"`
 }
 
-type updateSettingsMessage struct {
+type ZCLResponseMessage struct {
+	ClusterID       ClusterID          `json:"clusterId"`
+	CommandID       CommandID          `json:"commandId"`
+	Data            CommandData        `json:"commandData"`
+	ClusterSpecific bool               `json:"clusterSpecific"`
+	Endpoint        DeviceEndpointInfo `json:"deviceEndpoint"`
+}
+
+type ZDOResponseMessage struct {
+}
+
+type APSResponseMessage struct {
+}
+
+type CommandListMessage struct {
+	Commands []Command `json:"commands"`
+}
+
+type PublishStateMessage struct {
+}
+
+type UpdateSettingsMessage struct {
 	MeasureStatistics bool `json:"measureStatistics"`
 }
 
 const (
-	StateJustJoined              state = 0x00
+	StateJustJoined              State = 0x00
 	StateHaveActive                    = 0x01
 	StateHaveEndpointDescription       = 0x02
 	StateJoined                        = 0x10
@@ -52,7 +76,7 @@ const (
 	StateUnknown                       = 0xff
 )
 
-func (s state) String() string {
+func (s State) String() string {
 	switch s {
 	case StateJustJoined:
 		return "just-joined"

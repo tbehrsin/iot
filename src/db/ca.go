@@ -1,4 +1,4 @@
-package main
+package db
 
 import (
 	"crypto/rand"
@@ -8,17 +8,11 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ssm"
 	"math/big"
-	"net/http"
 	"time"
 )
 
-var caParameterName = "z3js-ca"
-
-var systemsManager = ssm.New(session.New(), aws.NewConfig())
+var caParameterName = "iot-ca"
 
 type CA struct {
 	Certificate *x509.Certificate
@@ -29,10 +23,10 @@ func CreateCA() error {
 	ca := &x509.Certificate{
 		SerialNumber: big.NewInt(1),
 		Subject: pkix.Name{
-			Organization: []string{"Behrsin Ltd"},
-			Country:      []string{"GB"},
-			Locality:     []string{"Manchester"},
-			CommonName:   "z3js CA",
+			Organization: []string{Organization},
+			Country:      []string{CACountry},
+			Locality:     []string{CALocality},
+			CommonName:   CACommonName,
 		},
 		NotBefore:             time.Now(),
 		NotAfter:              time.Now().AddDate(10, 0, 0),
@@ -52,15 +46,7 @@ func CreateCA() error {
 		b = append(b, pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(privateKey)})...)
 		s := string(b)
 
-		caParameterType := "SecureString"
-		in := &ssm.PutParameterInput{
-			Name:  &caParameterName,
-			Type:  &caParameterType,
-			Value: &s,
-		}
-		in.SetOverwrite(true)
-
-		if _, err := systemsManager.PutParameter(in); err != nil {
+		if err := SetValueSecure(caParameterName, s); err != nil {
 			return err
 		}
 	}
@@ -69,16 +55,12 @@ func CreateCA() error {
 }
 
 func GetCA() (*CA, error) {
-	in := &ssm.GetParametersInput{}
-	in.SetNames([]*string{&caParameterName})
-	in.SetWithDecryption(true)
-
-	if r, err := systemsManager.GetParameters(in); err != nil {
-		return nil, fmt.Errorf("error getting ca certificate", err)
+	if v, err := GetValueSecure(caParameterName); err != nil {
+		return nil, fmt.Errorf("error getting ca certificate: %+v", err)
 	} else {
 		ca := &CA{}
 		var block *pem.Block
-		data := []byte(*r.Parameters[0].Value)
+		data := []byte(v)
 		for {
 			block, data = pem.Decode(data)
 			if block == nil {
@@ -162,15 +144,4 @@ func (ca *CA) CertPool() (*x509.CertPool, error) {
 	pool := x509.NewCertPool()
 	pool.AddCert(ca.Certificate)
 	return pool, nil
-}
-
-func ServeCACertificate(w http.ResponseWriter, r *http.Request) {
-	if ca, err := GetCA(); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("503 Internal Server Error"))
-	} else {
-		w.Header()["Content-Type"] = []string{"application/x-x509-ca-cert"}
-		w.WriteHeader(http.StatusOK)
-		pem.Encode(w, &pem.Block{Type: "CERTIFICATE", Bytes: ca.Certificate.Raw})
-	}
 }

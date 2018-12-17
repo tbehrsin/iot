@@ -381,7 +381,6 @@
 		2223667193F28A629B5E64B1 /* libPods-z3js-tvOSTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-z3js-tvOSTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		22EF2907218354AD00DC8897 /* z3js-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "z3js-Bridging-Header.h"; sourceTree = "<group>"; };
 		22EF2908218354AD00DC8897 /* SwiftBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SwiftBridge.swift; path = z3js/SwiftBridge.swift; sourceTree = "<group>"; };
-		22FFD06C219A5B9B00AC88C8 /* cacert.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = cacert.h; path = z3js/cacert.h; sourceTree = "<group>"; };
 		2A68C62422C9903B31E3E93C /* Pods_z3js.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_z3js.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		2D02E47B1E0B4A5D006451C7 /* z3js-tvOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "z3js-tvOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		2D02E4901E0B4A5D006451C7 /* z3js-tvOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "z3js-tvOSTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -557,7 +556,6 @@
 		13B07FAE1A68108700A75B9A /* z3js */ = {
 			isa = PBXGroup;
 			children = (
-				22FFD06C219A5B9B00AC88C8 /* cacert.h */,
 				13B07FAF1A68108700A75B9A /* AppDelegate.h */,
 				13B07FB01A68108700A75B9A /* AppDelegate.m */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
@@ -1288,7 +1286,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "export NODE_BINARY=node\n../node_modules/react-native/scripts/react-native-xcode.sh";
+			shellScript = "export NODE_BINARY=node\n../node_modules/react-native/scripts/react-native-xcode.sh\n";
 		};
 		2D02E4CB1E0B4B27006451C7 /* Bundle React Native Code And Images */ = {
 			isa = PBXShellScriptBuildPhase;

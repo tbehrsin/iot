@@ -3,16 +3,16 @@ package main
 import (
 	"db"
 	"fmt"
-	"github.com/miekg/dns"
 	"log"
+	"os"
 	"strings"
+
+	"github.com/miekg/dns"
 )
 
 const Domain = db.Domain
-const WebAddress1 = "52.56.139.203"
-const WebAddress2 = "35.177.149.9"
-const NS1Address = "52.56.139.203"
-const NS2Address = "35.177.149.9"
+const NS1 = "iot-ns1.behrsin.com."
+const NS2 = "iot-ns2.behrsin.com."
 
 func alias(name string, cname string, res *dns.Msg) {
 	config, _ := dns.ClientConfigFromFile("/etc/resolv.conf")
@@ -43,58 +43,37 @@ func server(w dns.ResponseWriter, r *dns.Msg) {
 	m.Compress = false
 	m.Authoritative = true
 
-	if rr, err := dns.NewRR(fmt.Sprintf("%s 1209600 IN NS ns1.%s", Domain, Domain)); err == nil {
+	if rr, err := dns.NewRR(fmt.Sprintf("%s 1209600 IN NS %s", Domain, NS1)); err == nil {
 		m.Ns = append(m.Ns, rr)
 	}
-	if rr, err := dns.NewRR(fmt.Sprintf("%s 1209600 IN NS ns2.%s", Domain, Domain)); err == nil {
+	if rr, err := dns.NewRR(fmt.Sprintf("%s 1209600 IN NS %s", Domain, NS2)); err == nil {
 		m.Ns = append(m.Ns, rr)
-	}
-
-	if rr, err := dns.NewRR(fmt.Sprintf("ns1.%s 300 IN A %s", Domain, NS1Address)); err == nil {
-		m.Extra = append(m.Extra, rr)
-	}
-	if rr, err := dns.NewRR(fmt.Sprintf("ns2.%s 300 IN A %s", Domain, NS2Address)); err == nil {
-		m.Extra = append(m.Extra, rr)
 	}
 
 	if r.Opcode == dns.OpcodeQuery {
 		for _, q := range m.Question {
 			name := strings.ToLower(q.Name)
 			if q.Qtype == dns.TypeSOA && name == Domain {
-				if rr, err := dns.NewRR(fmt.Sprintf("%s 900 IN SOA ns1.%s awsdns-hostmaster.amazon.com. 2018102901 900 900 1800 60", name, Domain)); err == nil {
+				if rr, err := dns.NewRR(fmt.Sprintf("%s 900 IN SOA %s hostmaster.iot.behrsin.com. 2018102901 900 900 1800 60", name, NS1)); err == nil {
 					m.Answer = append(m.Answer, rr)
 				}
 			} else if q.Qtype == dns.TypeNS && name == Domain {
-				if rr, err := dns.NewRR(fmt.Sprintf("%s 300 IN NS ns1.%s", name, Domain)); err == nil {
+				if rr, err := dns.NewRR(fmt.Sprintf("%s 300 IN NS %s", name, NS1)); err == nil {
 					m.Answer = append(m.Answer, rr)
 				}
-				if rr, err := dns.NewRR(fmt.Sprintf("%s 300 IN NS ns2.%s", name, Domain)); err == nil {
+				if rr, err := dns.NewRR(fmt.Sprintf("%s 300 IN NS %s", name, NS2)); err == nil {
 					m.Answer = append(m.Answer, rr)
 				}
-			} else if (q.Qtype == dns.TypeA || q.Qtype == dns.TypeCNAME) && name == Domain {
-				if rr, err := dns.NewRR(fmt.Sprintf("%s 300 IN A %s", name, WebAddress1)); err == nil {
-					m.Answer = append(m.Answer, rr)
-				}
-				if rr, err := dns.NewRR(fmt.Sprintf("%s 300 IN A %s", name, WebAddress2)); err == nil {
-					m.Answer = append(m.Answer, rr)
-				}
-			} else if q.Qtype == dns.TypeA || q.Qtype == dns.TypeCNAME {
-				if name == "ns1.z3js.net." {
-					if rr, err := dns.NewRR(fmt.Sprintf("%s 300 IN A %s", name, NS1Address)); err == nil {
-						m.Answer = append(m.Answer, rr)
-					}
-					continue
-				}
-
-				if name == "ns2.z3js.net." {
-					if rr, err := dns.NewRR(fmt.Sprintf("%s 300 IN A %s", name, NS2Address)); err == nil {
-						m.Answer = append(m.Answer, rr)
-					}
-					continue
-				}
-
+			} else if q.Qtype == dns.TypeA && name == Domain {
+				alias(name, NS1, m)
+				alias(name, NS2, m)
+			} else if q.Qtype == dns.TypeA {
 				id := strings.TrimSuffix(name, fmt.Sprintf(".%s", Domain))
-				if gw, _ := db.GetGateway(id); gw != nil {
+
+				if id == "ca" {
+					alias(name, NS1, m)
+					alias(name, NS2, m)
+				} else if gw, _ := db.GetGateway(id); gw != nil {
 					if rr, err := dns.NewRR(fmt.Sprintf("%s 300 IN A %s", name, gw.Address)); err == nil {
 						m.Answer = append(m.Answer, rr)
 					}
@@ -107,9 +86,19 @@ func server(w dns.ResponseWriter, r *dns.Msg) {
 }
 
 func main() {
+	if err := db.Initialize(); err != nil {
+		panic(err)
+	}
+
+	port := "53"
+
+	if os.Getenv("PORT") != "" {
+		port = os.Getenv("PORT")
+	}
+
 	dns.HandleFunc(Domain, server)
 	go func() {
-		log.Fatal(dns.ListenAndServe(":53", "udp", nil))
+		log.Fatal(dns.ListenAndServe(fmt.Sprintf(":%s", port), "udp", nil))
 	}()
-	log.Fatal(dns.ListenAndServe(":53", "tcp", nil))
+	log.Fatal(dns.ListenAndServe(fmt.Sprintf(":%s", port), "tcp", nil))
 }

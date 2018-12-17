@@ -96,7 +96,7 @@ class Home extends React.Component {
 
     request('test', {
       method: 'GET',
-      path: '/api/v1/apps/test/s/2/hello'
+      path: '/api/v1/apps/test/s/2/hello/'
     });
   }
 

@@ -1,0 +1,13 @@
+FROM debian:stretch
+
+RUN dpkg --add-architecture armhf && \
+    apt-get -y update && \
+    apt-get -y install crossbuild-essential-armhf libc6-dev-armhf-cross libc6-armhf-cross curl qemu-user-static vim
+
+RUN curl -s https://dl.google.com/go/go1.11.2.linux-amd64.tar.gz | tar xzf - -C /usr/local && \
+    echo "GOROOT=/usr/local/go" | tee -a /etc/environment && \
+    ln -sf /usr/local/go/bin/go /usr/local/bin
+
+WORKDIR /app
+
+CMD ["make", "/build/bin/iot-gateway"]

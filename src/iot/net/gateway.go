@@ -3,7 +3,7 @@ package net
 import (
 	"sync"
 
-	"github.com/tbehrsin/v8"
+	"github.com/behrsin/go-v8"
 )
 
 type GatewayController struct {
@@ -24,16 +24,18 @@ type GatewayProxy struct {
 	devices     *sync.Map
 	controllers *sync.Map
 
-	DeviceConstructor func(v8.CallbackArgs) (*v8.Value, error) `v8:"Device"`
+	Controller func(v8.FunctionArgs) (*Controller, error)      `v8:"Controller"`
+	Test       func(v8.FunctionArgs) (*TestConstructor, error) `v8:"Test"`
 }
 
 func NewGatewayProxy(n *Network, g Gateway) *GatewayProxy {
 	p := &GatewayProxy{
-		network:           n,
-		gateway:           g,
-		devices:           &sync.Map{},
-		controllers:       &sync.Map{},
-		DeviceConstructor: NewDeviceShadow,
+		network:     n,
+		gateway:     g,
+		devices:     &sync.Map{},
+		controllers: &sync.Map{},
+		Controller:  NewController,
+		Test:        NewTestConstructor,
 	}
 	return p
 }
@@ -57,7 +59,11 @@ func (p *GatewayProxy) RemoveDevice(d Device) {
 
 func (p *GatewayProxy) UpdateDevice(d Device) {
 	if dp, ok := p.devices.Load(d.GetEUI64()); ok {
-		dp.(*DeviceProxy).onUpdate()
+		if dp.(*DeviceProxy).controller == nil {
+			p.onJoinNetwork(dp.(*DeviceProxy))
+		} else {
+			dp.(*DeviceProxy).onUpdate()
+		}
 	}
 }
 
@@ -71,7 +77,7 @@ func (p *GatewayProxy) onJoinNetwork(d *DeviceProxy) {
 	})
 }
 
-func (p *GatewayProxy) V8FuncSubscribe(in v8.CallbackArgs) (*v8.Value, error) {
+func (p *GatewayProxy) V8FuncSubscribe(in v8.FunctionArgs) (*v8.Value, error) {
 	controller := in.Arg(0)
 	p.controllers.Store(in.Context, controller)
 	p.devices.Range(func(k, v interface{}) bool {

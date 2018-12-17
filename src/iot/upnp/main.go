@@ -1,10 +1,11 @@
 package upnp
 
 import (
-	igd "github.com/emersion/go-upnp-igd"
 	"log"
 	"math/rand"
 	"time"
+
+	"github.com/emersion/go-upnp-igd"
 )
 
 const TimeToLive = time.Duration(60) * time.Second
@@ -54,7 +55,6 @@ func (m *Mapping) Update() {
 	go func() {
 		for {
 			device, more := <-ch
-			gateway := device.(*igd.IGD)
 
 			if !more {
 				m.gateway = nil
@@ -64,6 +64,8 @@ func (m *Mapping) Update() {
 				close(done)
 				return
 			}
+
+			gateway := device.(*igd.IGD)
 
 			// try a random port above 10000 and continue until successful
 			i := 0

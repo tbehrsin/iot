@@ -18,9 +18,8 @@ func main() {
 	})
 
 	api, _ := api.NewAPI()
-	defer api.DB.Close()
-	defer api.Mapping.Close()
 	defer api.Stop()
+	go api.StartInspector()
 
 	go func() {
 		if _, err := api.Registry.Load("test"); err != nil {
@@ -32,8 +31,6 @@ func main() {
 		signals := make(chan os.Signal, 1)
 		signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 		<-signals
-		api.Mapping.Close()
-		api.DB.Close()
 		api.Stop()
 		os.Exit(0)
 	}()

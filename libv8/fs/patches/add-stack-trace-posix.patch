@@ -1,0 +1,22 @@
+diff --git a/deps/v8/src/v8.gyp b/deps/v8/src/v8.gyp
+index 1adb2fe..698e687 100644
+--- a/deps/v8/src/v8.gyp
++++ b/deps/v8/src/v8.gyp
+@@ -1917,16 +1917,17 @@
+           }
+         ],
+         ['OS=="openbsd"', {
+             'link_settings': {
+               'libraries': [
+                 '-L/usr/local/lib -lexecinfo',
+             ]},
+             'sources': [
++              'base/debug/stack_trace_posix.cc',
+               'base/platform/platform-openbsd.cc',
+               'base/platform/platform-posix.cc'
+             ],
+           }
+         ],
+         ['OS=="netbsd"', {
+             'link_settings': {
+               'libraries': [

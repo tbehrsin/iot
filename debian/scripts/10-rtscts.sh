@@ -1,5 +1,5 @@
 
-cd /tmp
+cd /build
 git clone git://github.com/mholling/rpirtscts.git
 mv ./rpirtscts/rpirtscts /usr/sbin/rpirtscts
 

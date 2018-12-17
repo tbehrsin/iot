@@ -28,3 +28,8 @@ export const error = createSelector(
   domain,
   api => memoize(key => api.getIn(['requests', key, 'error']))
 );
+
+export const connectionState = createSelector(
+  domain,
+  api => api.getIn(['connection', 'state'])
+);

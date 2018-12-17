@@ -20,6 +20,7 @@
 /docker-compose.yml
 /package.json
 /yarn.lock
+/Dockerfile.iot
 /Dockerfile.dns
 /Dockerfile.server
 /app.json
@@ -29,3 +30,8 @@
 /mqtt/
 /src/*.sh
 /.syncignore
+/src/iot/vendor/
+/src/zigbee/
+/z3js.db
+/yarn-error.log
+/README.md

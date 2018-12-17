@@ -12,6 +12,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"sync"
 
 	"github.com/boltdb/bolt"
@@ -22,19 +23,26 @@ import (
 const Server = "https://z3js.net"
 
 type API struct {
-	Network     *iotnet.Network
-	Registry    *apps.Registry
-	DB          *bolt.DB
-	Server      *http.Server
-	Mapping     *upnp.Mapping
-	serverMutex *sync.Mutex
-	httpClient  *http.Client
+	Network           *iotnet.Network
+	Registry          *apps.Registry
+	DB                *bolt.DB
+	Server            *http.Server
+	Mapping           *upnp.Mapping
+	serverMutex       *sync.Mutex
+	httpClient        *http.Client
+	inspectorMessages chan []byte
 }
 
 func NewAPI() (*API, error) {
 	api := &API{}
 
-	if db, err := bolt.Open("/data/z3js.db", 0600, nil); err != nil {
+	dbfile := "/data/z3js.db"
+
+	if os.Getenv("DATABASE_FILE") != "" {
+		dbfile = os.Getenv("DATABASE_FILE")
+	}
+
+	if db, err := bolt.Open(dbfile, 0600, nil); err != nil {
 		log.Fatal(err)
 	} else {
 		api.DB = db
@@ -52,7 +60,7 @@ func NewAPI() (*API, error) {
 	network.AddGateway(zigbee.NewGateway())
 	api.Network = network
 
-	if r, err := apps.NewRegistry(api.Network); err != nil {
+	if r, err := apps.NewRegistry(api.Network, api); err != nil {
 		log.Fatal(err)
 	} else {
 		api.Registry = r
@@ -145,6 +153,11 @@ func (api *API) Stop() error {
 	api.serverMutex.Lock()
 	api.serverMutex.Unlock()
 	api.serverMutex = nil
+
+	if api.DB != nil {
+		api.DB.Close()
+	}
+
 	return err
 }
 
@@ -171,4 +184,61 @@ func (api *API) middleware(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.DefaultServeMux.ServeHTTP(w, r)
+}
+
+func (api *API) StartInspector() {
+
+	log.Fatal(http.ListenAndServe(":9222", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		c, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			log.Println("inspector upgrade:", err)
+			return
+		}
+		api.inspectorMessages = make(chan []byte)
+
+		defer func() {
+			c.Close()
+			close(api.inspectorMessages)
+			api.inspectorMessages = nil
+			// api.Registry.Inspector().Reset()
+		}()
+
+		go func() {
+			for {
+				message, more := <-api.inspectorMessages
+
+				if more {
+					c.WriteMessage(websocket.TextMessage, []byte(message))
+				} else {
+					break
+				}
+			}
+		}()
+
+		for {
+			if mt, message, err := c.ReadMessage(); err != nil {
+				return
+			} else if mt == websocket.TextMessage {
+				api.Registry.Inspector().DispatchMessage(string(message))
+			} else if mt == websocket.CloseMessage {
+				return
+			}
+		}
+	})))
+}
+
+func (api *API) V8InspectorSendResponse(callID int, message string) {
+	if api.inspectorMessages != nil {
+		api.inspectorMessages <- []byte(message)
+	}
+}
+
+func (api *API) V8InspectorSendNotification(message string) {
+	if api.inspectorMessages != nil {
+		api.inspectorMessages <- []byte(message)
+	}
+}
+
+func (api *API) V8InspectorFlushProtocolNotifications() {
+
 }

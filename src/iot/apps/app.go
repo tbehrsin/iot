@@ -3,26 +3,28 @@ package apps
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"iot/net"
 	"net/http"
 	"os"
 	"time"
 
-	"github.com/tbehrsin/v8"
-	"github.com/tbehrsin/v8/v8console"
+	"github.com/behrsin/go-v8"
 )
 
 type App struct {
-	network *net.Network
-	context *v8.Context
-	value   *v8.Value
-	routes  []Route
-	Name    string
+	debug       bool
+	network     *net.Network
+	registry    *Registry
+	context     *v8.Context
+	value       *v8.Value
+	routes      []Route
+	Name        string
+	Module      *Module
+	moduleCache map[string]*Module
 }
 
 func (r *Registry) Load(name string) (*App, error) {
-	var p map[string]string
+	var p map[string]interface{}
 	if fd, err := os.Open(fmt.Sprintf("%s/package.json", name)); err != nil {
 		return nil, err
 	} else if err := json.NewDecoder(fd).Decode(&p); err != nil {
@@ -32,15 +34,24 @@ func (r *Registry) Load(name string) (*App, error) {
 	filename := fmt.Sprintf("%s/%s", name, p["main"])
 
 	a := &App{
-		network: r.network,
-		routes:  make([]Route, 0, 4),
-		Name:    name,
+		debug:       true,
+		network:     r.network,
+		registry:    r,
+		routes:      make([]Route, 0, 4),
+		Name:        name,
+		moduleCache: map[string]*Module{},
 	}
-	a.context = v8.NewIsolate().NewContext()
-	v8console.Config{"", os.Stdout, os.Stderr, true}.Inject(a.context)
+	a.context = r.isolate.NewContext()
+
+	if a.debug {
+		r.inspector.AddContext(a.context, name)
+	}
+
 	a.createContext()
-	if err := a.eval(filename); err != nil {
+	if module, err := a.NewModuleFromFile(filename, nil); err != nil {
 		return nil, err
+	} else {
+		a.Module = module
 	}
 
 	r.apps[name] = a
@@ -54,17 +65,12 @@ func (a *App) Context() *v8.Context {
 	return a.context
 }
 
-func (a *App) eval(filename string) error {
-	if data, err := ioutil.ReadFile(filename); err != nil {
-		return err
-	} else if _, err := a.context.Eval(string(data), filename); err != nil {
+func (a *App) createContext() error {
+
+	if err := a.context.Global().Set("global", a.context.Global()); err != nil {
 		return err
 	}
 
-	return nil
-}
-
-func (a *App) createContext() error {
 	a.injectGateways()
 	a.injectApp()
 	a.injectRouter()
@@ -72,6 +78,12 @@ func (a *App) createContext() error {
 	if jso, err := a.context.Create(a.setTimeout); err != nil {
 		return err
 	} else if err := a.context.Global().Set("setTimeout", jso); err != nil {
+		return err
+	}
+
+	if jso, err := a.context.Create(net.NewTestConstructor); err != nil {
+		return err
+	} else if err := a.context.Global().Set("Test", jso); err != nil {
 		return err
 	}
 
@@ -102,7 +114,7 @@ func (a *App) injectGateways() error {
 	return nil
 }
 
-func (a *App) setTimeout(in v8.CallbackArgs) (*v8.Value, error) {
+func (a *App) setTimeout(in v8.FunctionArgs) (*v8.Value, error) {
 	go func() {
 		time.Sleep(time.Duration(in.Args[1].Int64()) * time.Millisecond)
 		in.Args[0].Call(nil)
@@ -111,5 +123,8 @@ func (a *App) setTimeout(in v8.CallbackArgs) (*v8.Value, error) {
 }
 
 func (a *App) Terminate() {
-	a.context.Terminate()
+	if a.debug {
+		a.registry.Inspector().RemoveContext(a.context)
+	}
+	a.context.GetIsolate().Terminate()
 }

@@ -8,10 +8,11 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/dgrijalva/jwt-go"
 )
 
 type gatewayContextType int
@@ -97,7 +98,7 @@ var redirectHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 		url := *r.URL
 		url.Scheme = "https"
 		url.User = nil
-		url.Host = fmt.Sprintf("%s.z3js.net:%d", gw.ID, gw.Port)
+		url.Host = fmt.Sprintf("%s.%s:%d", gw.ID, strings.TrimSuffix(db.Domain, "."), gw.Port)
 
 		w.Header()["Location"] = []string{url.String()}
 
@@ -112,10 +113,10 @@ var redirectHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 })
 
 var serverHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
+	w.Header().Add("Strict-Transport-Security", "max-age=63072000")
 
 	if len(r.TLS.PeerCertificates) >= 1 {
-		id := strings.TrimSuffix(r.TLS.PeerCertificates[0].Subject.CommonName, ".z3js.net")
+		id := strings.TrimSuffix(r.TLS.PeerCertificates[0].Subject.CommonName, fmt.Sprintf(".%s", strings.TrimSuffix(db.Domain, ".")))
 		log.Println(id)
 		if gw, err := db.GetGateway(id); err != nil {
 			APIErrorWithStatus(w, fmt.Errorf("invalid peer certificate for gateway: %+v", err), http.StatusUnauthorized)
@@ -146,10 +147,16 @@ var serverHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request
 })
 
 var insecureHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
+	if r.Host == fmt.Sprintf("ca.%s", strings.TrimSuffix(db.Domain, ".")) || r.Host == fmt.Sprintf("ca.%s:80", strings.TrimSuffix(db.Domain, ".")) {
+		ServeCACertificate(w, r)
+		return
+	}
+
+	w.Header().Add("Strict-Transport-Security", "max-age=63072000")
 
 	url := *r.URL
 	url.Scheme = "https"
+	url.Host = strings.TrimSuffix(db.Domain, ".")
 	url.User = nil
 
 	w.Header()["Location"] = []string{url.String()}
@@ -158,12 +165,16 @@ var insecureHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 })
 
 func main() {
+	if err := db.Initialize(); err != nil {
+		panic(err)
+	}
+
 	ca := flag.Bool("ca", false, "create new certificate authority")
 
 	flag.Parse()
 
 	if *ca {
-		if err := CreateCA(); err != nil {
+		if err := db.CreateCA(); err != nil {
 			log.Println(err)
 		}
 	} else {
@@ -171,9 +182,9 @@ func main() {
 			log.Fatal(http.ListenAndServe(":http", insecureHandler))
 		}()
 
-		if ca, err := GetCA(); err != nil {
+		if ca, err := db.GetCA(); err != nil {
 			log.Fatal(err)
-		} else if cert, err := ca.CreateServerCertificate("z3js.net"); err != nil {
+		} else if cert, err := ca.CreateServerCertificate(strings.TrimSuffix(db.Domain, ".")); err != nil {
 			log.Fatal(err)
 		} else if pool, err := ca.CertPool(); err != nil {
 			log.Fatal(err)

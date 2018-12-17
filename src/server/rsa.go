@@ -8,9 +8,10 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"github.com/gorilla/mux"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 type CreateCertificateRequest struct {
@@ -68,7 +69,7 @@ func CreateCertificate(w http.ResponseWriter, r *http.Request) {
 	} else if gateway == nil {
 		APIErrorWithStatus(w, fmt.Errorf("unknown gateway"), http.StatusBadRequest)
 		return
-	} else if ca, err := GetCA(); err != nil {
+	} else if ca, err := db.GetCA(); err != nil {
 		APIError(w, err)
 		return
 	} else if err := request.Validate(gateway.FQDNWithoutDot()); err != nil {

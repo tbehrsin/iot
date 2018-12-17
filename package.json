@@ -12,13 +12,16 @@
     "start:ios": "react-native run-ios --device",
     "start:android": "react-native run-android",
     "start:watchman": "node node_modules/react-native/local-cli/cli.js start",
+    "inspector": "cd src/inspector; npm run -s start",
     "test": "jest",
     "postinstall": "cd ios; pod install"
   },
   "dependencies": {
     "buffer": "^5.2.1",
+    "electron": "^3.0.10",
     "immutable": "^3.8.2",
     "lodash": "^4.17.11",
+    "lodash.memoize": "^4.1.2",
     "react": "16.6.0-alpha.8af6728",
     "react-native": "0.57.4",
     "react-native-ble-plx": "^1.0.0",

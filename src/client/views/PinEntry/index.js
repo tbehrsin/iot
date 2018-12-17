@@ -142,8 +142,8 @@ class PinEntry extends React.Component {
       <View style={styles.container}>
         <View style={{flex: 1, marginBottom: -380}}/>
         <View style={{flex: 1}}>
-          {hasPinCode && <Button disabled style={styles.button}>SETUP YOUR SMART HUB</Button>}
-          {hasPinCode || <Button disabled style={styles.button}>CONNECT TO YOUR SMART HUB</Button>}
+          {hasPinCode || <Button disabled style={styles.button}>SETUP YOUR SMART HUB</Button>}
+          {hasPinCode && <Button disabled style={styles.button}>CONNECT TO YOUR SMART HUB</Button>}
           <TouchableWithoutFeedback onPressIn={this.onPressPinInputBox}>
             <View style={styles.pinInputBox}>
               <View style={[styles.pinDigit, {marginLeft: 0}]}><Text style={styles.pinDigitText}>{pin[0]}</Text></View>
@@ -156,14 +156,14 @@ class PinEntry extends React.Component {
           </TouchableWithoutFeedback>
           <View style={{flex: 1}} />
           <View style={styles.blurbContainer}>
-            {hasPinCode && (
+            {hasPinCode || (
               <Text style={styles.blurb}>
                 Enter a PIN code to make sure you can gain access to this device in the future.
                 This can be shared with your family so they can pair with your <Logo small /> smart
                 hub too. Please keep this PIN code safe.
               </Text>
             )}
-            {hasPinCode || (
+            {hasPinCode && (
               <Text style={styles.blurb}>
                 Enter the PIN code you have used to gain access to this <Logo small /> smart hub.
               </Text>

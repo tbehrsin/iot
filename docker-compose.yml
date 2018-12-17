@@ -2,7 +2,7 @@ version: '3'
 
 volumes:
   mqtt:
-  dynamodb:
+  datastore:
 
 services:
   mqtt:
@@ -11,18 +11,14 @@ services:
       - mqtt:/mosquitto/data
       - ./mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
     ports:
+      - 127.0.0.1:1883:1883
       - 127.0.0.1:9001:9001
-  dynamodb:
-    image: amazon/dynamodb-local
-    command:
-      - -jar
-      - DynamoDBLocal.jar
-      - -sharedDb
-      - -delayTransientStatuses
-      - -dbPath
-      - /data
+  datastore:
+    image: singularities/datastore-emulator
+    environment:
+      - DATASTORE_PROJECT_ID=behrsin-iot
+      - DATASTORE_LISTEN_ADDRESS=0.0.0.0:8081
     volumes:
-      - dynamodb:/data 
+      - datastore:/opt/data
     ports:
-      - 127.0.0.1:8000:8000
-    user: root 
+      - 127.0.0.1:8081:8081

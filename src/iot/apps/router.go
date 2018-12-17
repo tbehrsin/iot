@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/tbehrsin/v8"
+	"github.com/behrsin/go-v8"
 )
 
 type Route struct {
@@ -19,11 +19,11 @@ type Route struct {
 type Router interface {
 	AppendRoute(route *Route)
 	Routes() []Route
-	V8FuncHandle(in v8.CallbackArgs) (*v8.Value, error)
+	V8FuncHandle(in v8.FunctionArgs) (*v8.Value, error)
 }
 
 type RouterImpl struct {
-	app    *App
+	// app    *App
 	routes []Route
 }
 
@@ -36,7 +36,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	app := a.value
 	handle, _ := app.Get("handle")
 
-	next, _ := a.context.Create(func(in v8.CallbackArgs) (*v8.Value, error) {
+	next, _ := a.context.Create(func(in v8.FunctionArgs) (*v8.Value, error) {
 		res := response.value
 
 		status, _ := res.Get("status")
@@ -57,9 +57,9 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) injectRouter() error {
-	if jso, err := a.context.Create(func(in v8.CallbackArgs) (*v8.Value, error) {
+	if jso, err := a.context.Create(func(in v8.FunctionArgs) (*v8.Value, error) {
 		router := &RouterImpl{
-			app:    a,
+			// app:    a,
 			routes: make([]Route, 0, 4),
 		}
 		if jso, err := a.context.Create(router); err != nil {
@@ -76,12 +76,12 @@ func (a *App) injectRouter() error {
 	return nil
 }
 
-func createRouteNextHandler(router Router, routes []Route, i int, in v8.CallbackArgs) *v8.Value {
+func createRouteNextHandler(router Router, routes []Route, i int, in v8.FunctionArgs) *v8.Value {
 	if len(routes) <= i+1 {
 		return in.Arg(2)
 	} else {
 		r := routes[i+1:]
-		next, _ := in.Context.Create(func(in2 v8.CallbackArgs) (*v8.Value, error) {
+		next, _ := in.Context.Create(func(in2 v8.FunctionArgs) (*v8.Value, error) {
 			//err := in2.Arg(0)
 			routeHandler(router, r, in)
 			return nil, nil
@@ -90,7 +90,7 @@ func createRouteNextHandler(router Router, routes []Route, i int, in v8.Callback
 	}
 }
 
-func routeHandler(router Router, routes []Route, in v8.CallbackArgs) (*v8.Value, error) {
+func routeHandler(router Router, routes []Route, in v8.FunctionArgs) (*v8.Value, error) {
 	req := in.Arg(0)
 	res := in.Arg(1)
 	next := in.Arg(2)
@@ -138,7 +138,7 @@ func routeHandler(router Router, routes []Route, in v8.CallbackArgs) (*v8.Value,
 	return nil, nil
 }
 
-func (a *App) V8FuncHandle(in v8.CallbackArgs) (*v8.Value, error) {
+func (a *App) V8FuncHandle(in v8.FunctionArgs) (*v8.Value, error) {
 	return routeHandler(a, a.Routes(), in)
 }
 
@@ -150,7 +150,7 @@ func (a *App) Routes() []Route {
 	return a.routes
 }
 
-func (r *RouterImpl) V8FuncHandle(in v8.CallbackArgs) (*v8.Value, error) {
+func (r *RouterImpl) V8FuncHandle(in v8.FunctionArgs) (*v8.Value, error) {
 	return routeHandler(r, r.Routes(), in)
 }
 
@@ -162,7 +162,7 @@ func (r *RouterImpl) Routes() []Route {
 	return r.routes
 }
 
-func (a *App) V8FuncUse(in v8.CallbackArgs) (*v8.Value, error) {
+func (a *App) V8FuncUse(in v8.FunctionArgs) (*v8.Value, error) {
 	pathname := in.Args[0]
 	handlers := in.Args[1:]
 
@@ -177,7 +177,7 @@ func (a *App) V8FuncUse(in v8.CallbackArgs) (*v8.Value, error) {
 	return nil, nil
 }
 
-func (r *RouterImpl) V8FuncUse(in v8.CallbackArgs) (*v8.Value, error) {
+func (r *RouterImpl) V8FuncUse(in v8.FunctionArgs) (*v8.Value, error) {
 	pathname := in.Args[0]
 	handlers := in.Args[1:]
 
@@ -192,7 +192,7 @@ func (r *RouterImpl) V8FuncUse(in v8.CallbackArgs) (*v8.Value, error) {
 	return nil, nil
 }
 
-func (r *RouterImpl) V8FuncGet(in v8.CallbackArgs) (*v8.Value, error) {
+func (r *RouterImpl) V8FuncGet(in v8.FunctionArgs) (*v8.Value, error) {
 	pathname := in.Args[0]
 	handlers := in.Args[1:]
 
@@ -208,9 +208,9 @@ func (r *RouterImpl) V8FuncGet(in v8.CallbackArgs) (*v8.Value, error) {
 }
 
 type Request struct {
-	Path        string `json:"path"`
-	OriginalURL string `json:"originalUrl"`
-	Method      string `json:"method"`
+	Path        string `v8:"path"`
+	OriginalURL string `v8:"originalUrl"`
+	Method      string `v8:"method"`
 	req         *http.Request
 	value       *v8.Value
 }
@@ -230,7 +230,7 @@ func (a *App) NewRequest(req *http.Request, mountPoint string) (*Request, error)
 	}
 }
 
-func (r *Request) V8FuncCopy(in v8.CallbackArgs) (*v8.Value, error) {
+func (r *Request) V8FuncCopy(in v8.FunctionArgs) (*v8.Value, error) {
 	path := in.Arg(0).String()
 
 	request := &Request{
@@ -266,7 +266,7 @@ func (a *App) NewResponse(res http.ResponseWriter) (*Response, error) {
 	}
 }
 
-func (r *Response) V8FuncStatus(in v8.CallbackArgs) (*v8.Value, error) {
+func (r *Response) V8FuncStatus(in v8.FunctionArgs) (*v8.Value, error) {
 	status := in.Args[0].Float64()
 
 	r.res.WriteHeader(int(status))
@@ -274,7 +274,7 @@ func (r *Response) V8FuncStatus(in v8.CallbackArgs) (*v8.Value, error) {
 	return nil, nil
 }
 
-func (r *Response) V8FuncSend(in v8.CallbackArgs) (*v8.Value, error) {
+func (r *Response) V8FuncSend(in v8.FunctionArgs) (*v8.Value, error) {
 	data := in.Arg(0)
 
 	if _, err := r.res.Write([]byte(data.String())); err != nil {
@@ -286,7 +286,7 @@ func (r *Response) V8FuncSend(in v8.CallbackArgs) (*v8.Value, error) {
 	return nil, nil
 }
 
-func (r *Response) V8FuncJSON(in v8.CallbackArgs) (*v8.Value, error) {
+func (r *Response) V8FuncJSON(in v8.FunctionArgs) (*v8.Value, error) {
 	data := in.Arg(0)
 
 	if b, err := data.MarshalJSON(); err != nil {

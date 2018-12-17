@@ -3,12 +3,14 @@ package main
 import (
 	"db"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
-	"github.com/gorilla/mux"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/gorilla/mux"
 )
 
 func APIError(w http.ResponseWriter, err error) {
@@ -55,6 +57,23 @@ func private() http.Handler {
 	return r
 }
 
+func ServeCACertificate(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet || r.URL.Path != "/ca.crt" {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("404 Not Found"))
+		return
+	}
+
+	if ca, err := db.GetCA(); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("503 Internal Server Error"))
+	} else {
+		w.Header()["Content-Type"] = []string{"application/x-x509-ca-cert"}
+		w.WriteHeader(http.StatusOK)
+		pem.Encode(w, &pem.Block{Type: "CERTIFICATE", Bytes: ca.Certificate.Raw})
+	}
+}
+
 type CreateGatewayRequest struct {
 	Port uint16 `json:"port"`
 }
@@ -77,7 +96,7 @@ func CreateGateway(w http.ResponseWriter, r *http.Request) {
 
 	addr := strings.Split(r.RemoteAddr, ":")[0]
 
-	if gw, err := db.CreateGateway(addr, request.Port); err != nil {
+	if gw, err := db.CreateGateway(addr, int(request.Port)); err != nil {
 		APIError(w, err)
 		return
 	} else {
@@ -102,7 +121,7 @@ func UpdateGateway(w http.ResponseWriter, r *http.Request) {
 	}
 
 	gw := r.Context().Value(GatewayContextKey).(*db.Gateway)
-	gw.Port = request.Port
+	gw.Port = int(request.Port)
 
 	if err := gw.Update(); err != nil {
 		APIError(w, err)

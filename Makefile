@@ -13,12 +13,14 @@ deps:
 	@go get -u github.com/golang/dep/cmd/dep
 	@go get -u github.com/cespare/reflex
 	@cd src/iot; GOPATH=$(shell pwd) dep ensure
-	@GOPATH=$(shell pwd) bash src/iot/install-v8.sh
+	@mkdir -p src/iot/vendor/github.com/behrsin
+	@ln -sf $(shell pwd)/../go-v8 src/iot/vendor/github.com/behrsin/go-v8
+	@src/iot/vendor/github.com/behrsin/go-v8/install-v8.sh
 	@test -d src/server && (cd src/server; GOPATH=$(shell pwd) dep ensure) || true
 	@test -d src/dns && (cd src/dns; GOPATH=$(shell pwd) dep ensure) || true
 	@test -d src/db && (cd src/db; GOPATH=$(shell pwd) dep ensure) || true
 
-bin/iot-gateway: $(shell test -d src/iot && find src/iot -name "*.go" -or -name "*.cc" -or -name "*.h")
+bin/iot-gateway: $(shell test -d src/iot && find src/iot ../go-v8 -name "*.go" -or -name "*.cc" -or -name "*.h")
 	GOPATH=$(shell pwd) go build -o bin/iot-gateway iot
 
 bin/iot-server: $(shell test -d src/server && find src/server src/db -name "*.go" ! -path "src/server/vendor/*")
@@ -27,29 +29,51 @@ bin/iot-server: $(shell test -d src/server && find src/server src/db -name "*.go
 bin/iot-dns: $(shell test -d src/dns && find src/dns src/db -name "*.go" ! -path "src/dns/vendor/*")
 	GOPATH=$(shell pwd) go build -o bin/iot-dns dns
 
+bin/iot-zigbee: $(shell test -d src/zigbee && find src/iot src/zigbee -name "*.go")
+	GOPATH=$(shell pwd) go build -o bin/iot-zigbee zigbee
+
+zigbee: bin/iot-zigbee
+	bin/iot-zigbee
+
+iot: bin/iot-gateway
+	@cd apps; DATABASE_FILE=$(shell pwd)/z3js.db BLUETOOTH_EMULATION=true ../bin/iot-gateway
+
+dns: bin/iot-dns
+	PORT=8053 bin/iot-dns
+
+server: bin/iot-server
+	PORT=8443 bin/iot-server
+
 push-iot-gateway:
-	rsync -arv --exclude-from=.syncignore --delete . iot-gateway:/app
-	ssh iot-gateway "cd /app && make bin/iot-gateway && sudo systemctl restart iot-gateway && sudo journalctl -xfu iot-gateway"
+	$(eval TMP := $(shell mktemp -d))
+	@rsync -ar --exclude-from=.syncignore --delete . $(TMP)
+	@cd $(TMP)/src/iot; GOPATH=$(TMP) dep ensure
+	@cd $(TMP); GOPATH=$(TMP) GOOS=linux GOARCH=arm $(TMP)/src/iot/vendor/github.com/behrsin/go-v8/install-v8.sh
+	@cd $(TMP); rsync -ar --exclude=/pkg/ --delete . iot-gateway:/app
+	@rm -Rf $(TMP)
+	@ssh iot-gateway "cd /app && make bin/iot-gateway && sudo systemctl restart iot-gateway && sudo journalctl -xfu iot-gateway"
 
 push-iot-dns:
+	rm -f bin/iot-dns
 	GOOS=linux GOARCH=amd64 make bin/iot-dns
 	rm -Rf /tmp/iot-dns
 	mkdir -p /tmp/iot-dns
 	cp Dockerfile.dns bin/iot-dns /tmp/iot-dns
-	docker build -t 637256544704.dkr.ecr.eu-west-2.amazonaws.com/iot-dns:latest -f Dockerfile.dns /tmp/iot-dns/
-	$(shell aws ecr get-login --profile=behrsin --no-include-email)
-	docker push 637256544704.dkr.ecr.eu-west-2.amazonaws.com/iot-dns:latest
-	ssh admin@ns1.z3js.net "sudo systemctl restart iot-dns && sudo journalctl -xfu iot-dns"
+	docker build -t gcr.io/behrsin-iot/iot-dns:latest -f Dockerfile.dns /tmp/iot-dns/
+	docker push gcr.io/behrsin-iot/iot-dns:latest
+	cat src/dns/iot-dns.service | ssh iot-ns1.behrsin.com "sudo cp /dev/stdin /etc/systemd/system/iot-dns.service && sudo systemctl enable iot-dns && sudo systemctl restart iot-dns"
+	cat src/dns/iot-dns.service | ssh iot-ns2.behrsin.com "sudo cp /dev/stdin /etc/systemd/system/iot-dns.service && sudo systemctl enable iot-dns && sudo systemctl restart iot-dns && journalctl -xfu iot-dns"
 
 push-iot-server:
+	rm -f bin/iot-server
 	GOOS=linux GOARCH=amd64 make bin/iot-server
 	rm -Rf /tmp/iot-server
 	mkdir -p /tmp/iot-server
 	cp Dockerfile.server bin/iot-server /tmp/iot-server
-	docker build -t 637256544704.dkr.ecr.eu-west-2.amazonaws.com/iot-server:latest -f Dockerfile.server /tmp/iot-server/
-	$(shell aws ecr get-login --profile=behrsin --no-include-email)
-	docker push 637256544704.dkr.ecr.eu-west-2.amazonaws.com/iot-server:latest
-	ssh admin@z3js.net "sudo systemctl restart iot-server && sudo journalctl -xfu iot-server"
+	docker build -t gcr.io/behrsin-iot/iot-server:latest -f Dockerfile.server /tmp/iot-server/
+	docker push gcr.io/behrsin-iot/iot-server:latest
+	cat src/server/iot-server.service | ssh iot-ns1.behrsin.com "sudo cp /dev/stdin /etc/systemd/system/iot-server.service && sudo systemctl enable iot-server && sudo systemctl restart iot-server"
+	cat src/server/iot-server.service | ssh iot-ns2.behrsin.com "sudo cp /dev/stdin /etc/systemd/system/iot-server.service && sudo systemctl enable iot-server && sudo systemctl restart iot-server && journalctl -xfu iot-server"
 
 debian:
 	cd debian; docker-compose -p iot up --build --force-recreate

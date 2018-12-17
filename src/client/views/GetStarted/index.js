@@ -70,8 +70,6 @@ class GetStarted extends React.Component {
   componentDidMount() {
     const { initialize } = this.props;
     initialize();
-
-    this.updateProgress(this.props);
   }
 
   componentWillReceiveProps(nextProps) {
