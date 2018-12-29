@@ -1,0 +1,46 @@
+@import '../../vars';
+
+.container {
+  align-self: center;
+  width: 100%;
+  max-width: 904px;
+
+  display: flex;
+  flex-flow: row;
+  align-items: stretch;
+}
+
+.columns {
+  flex: 1 1 auto;
+
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: stretch;
+  justify-content: space-between;
+
+  > :nth-child(1) {
+    flex: 1 1 50%;
+
+  }
+
+  > :nth-child(2) {
+    border: 1px solid $boxColor;
+    flex: 1 1 60%;
+    margin-left: 15px;
+  }
+}
+
+.field {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: baseline;
+
+
+  h3 {
+    margin-right: 1em;
+  }
+
+  + .field {
+    margin-top: 0.5em;
+  }
+}

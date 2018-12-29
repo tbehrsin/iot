@@ -19,7 +19,7 @@ class WebSocketService {
   }
 
   async connect(uri) {
-    const client = new Client({ uri, clientId: 'z3js', storage });
+    const client = new Client({ uri, clientId: 'iot-mobile-' + (0x100000 + Math.random() * 0x7fffff).toString(), storage });
 
     client.on('connectionLost', (responseObject) => {
       if (responseObject.errorCode !== 0) {
@@ -33,10 +33,12 @@ class WebSocketService {
       const body = JSON.parse(payload);
 
       for (const [k, v] of Object.entries(subscriptions)) {
-        const re = new RegExp(`^${k.replace(/[-[\]{}()*?.,\\^$|\s]/g, '\\$&').replace(/#/g, '.*').replace(/\+/g, '[^/]+')}$`);
-        if (re.test(topic)) {
+        const re = new RegExp(`^${k.replace(/[-[\]{}()*?.,\\^$|\s]/g, '\\$&').replace(/#/g, '(.*)').replace(/\+/g, '([^/]+)')}$`);
+        
+        let match;
+        if (match = topic.match(re)) {
           for (const subscription of v) {
-            subscription.handler(topic, body);
+            subscription.handler(topic, body, match);
           }
         }
       }
@@ -76,6 +78,18 @@ class WebSocketService {
   }
 
   subscribe(topic, handler, qos = 2) {
+    if (typeof topic !== 'string') {
+      throw new TypeError('topic must be a string');
+    }
+
+    if (typeof handler !== 'function') {
+      throw new TypeError('handler must be a function');
+    }
+
+    if ([0, 1, 2].indexOf(qos) === -1) {
+      throw new TypeError('qos must be 0, 1 or 2');
+    }
+
     const { client, subscriptions } = WebSocketTable.get(this);
 
     const subscription = {
@@ -95,16 +109,21 @@ class WebSocketService {
     return {
       unsubscribe: () => {
         const index = subscriptions[topic].indexOf(subscription);
+
         if (index === -1) {
           return;
         }
 
-        subscriptions[topic].splic(index, 1);
+        subscriptions[topic].splice(index, 1);
 
         if (subscriptions[topic].length === 0) {
           delete subscriptions[topic];
-          client.unsubscribe(topic);
+          if (client) {
+            client.unsubscribe(topic);
+          }
         }
+
+        console.info(index, subscriptions);
       }
     }
   }

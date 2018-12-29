@@ -1,0 +1,32 @@
+@import '../../vars';
+
+.container {
+  background: $boxColor;
+}
+
+.shell {
+  position: relative;
+  background: $blackColor;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  padding: 0.4em;
+  color: white;
+
+  .selectable, b, strong {
+    -webkit-user-select: text;
+    &::selection {
+      background: $boxColor;
+      color: $blackColor;
+    }
+  }
+
+  strong {
+    color: $foregroundColor;
+  }
+}
+
+.copy {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+}

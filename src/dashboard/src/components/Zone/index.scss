@@ -1,0 +1,37 @@
+@import '../../vars';
+
+.container {
+  display: flex;
+  flex-flow: row wrap;
+}
+
+.box {
+  display: flex;
+  flex-flow: column nowrap;
+  align-items: stretch;
+  width: 160px;
+  height: 140px;
+  border: 1px solid $textColor;
+  background: $boxDisabledColor;
+  text-decoration: none;
+  color: inherit;
+  margin: 0 15px 15px 0;
+}
+
+.box-title {
+  margin: 0.4em;
+}
+
+.box-button {
+  background: $textColor;
+}
+
+.box-on {
+  color: $foregroundColor;
+  border-color: $foregroundColor;
+  background: $boxColor;
+
+  .box-button {
+    background: $foregroundColor;
+  }
+}

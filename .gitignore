@@ -1,6 +1,7 @@
 /bin/
 /ios/Pods
 pkg/
+*.pb.go
 src/*/vendor/
 node_modules/
 dist/

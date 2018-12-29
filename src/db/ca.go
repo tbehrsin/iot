@@ -87,7 +87,8 @@ func GetCA() (*CA, error) {
 
 func (ca *CA) CreateServerCertificate(name string) (*tls.Certificate, error) {
 	template := &x509.CertificateRequest{
-		Subject: pkix.Name{CommonName: name},
+		Subject:  pkix.Name{CommonName: name},
+		DNSNames: []string{name},
 	}
 
 	if privateKey, err := rsa.GenerateKey(rand.Reader, 2048); err != nil {
@@ -128,6 +129,8 @@ func (ca *CA) Sign(csr *x509.CertificateRequest) ([]*x509.Certificate, error) {
 		NotAfter:     time.Now().Add(time.Duration(90*24) * time.Hour),
 		KeyUsage:     x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
+
+		DNSNames: csr.DNSNames,
 	}
 
 	if bytes, err := x509.CreateCertificate(rand.Reader, &template, ca.Certificate, csr.PublicKey, ca.PrivateKey); err != nil {

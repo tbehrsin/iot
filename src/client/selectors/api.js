@@ -21,12 +21,35 @@ export const isFail = createSelector(
 
 export const body = createSelector(
   domain,
-  api => memoize(key => api.getIn(['requests', key, 'body']))
+  api => memoize(key => {
+    const body = api.getIn(['requests', key, 'body']);
+
+    if (body) {
+      return body.toJS();
+    }
+  })
+);
+
+export const url = createSelector(
+  domain,
+  api => memoize(key => {
+    const url = api.getIn(['requests', key, 'url']);
+
+    if (url) {
+      return url;
+    }
+  })
 );
 
 export const error = createSelector(
   domain,
-  api => memoize(key => api.getIn(['requests', key, 'error']))
+  api => memoize(key => {
+    const error = api.getIn(['requests', key, 'error']);
+
+    if (error) {
+      return error.toJS();
+    }
+  })
 );
 
 export const connectionState = createSelector(

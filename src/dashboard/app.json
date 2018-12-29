@@ -1,0 +1,6 @@
+{
+  "constants": {
+    "domain": "iot.behrsin.com",
+    "forceServer": false
+  }
+}

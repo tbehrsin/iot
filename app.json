@@ -2,6 +2,7 @@
   "name": "z3js",
   "displayName": "z3js",
   "constants": {
+    "url": "https://iot.behrsin.com",
     "backgroundColor": "#f5f8fa",
     "foregroundColor": "#4986a1",
     "highlightColor": "#2883ab",
@@ -9,6 +10,10 @@
     "boxOnColor": "#edf6f9",
     "boxOffColor": "#edf0f2",
     "fontFamily": "lato",
+    "titleFontSize": 20,
+    "titleFontWeight": "500",
+    "subtitleFontSize": 18,
+    "subtitleFontWeight": "500",
     "tagLine": "home automation done right",
     "bleService": "1ed8da28-c0f8-42ee-90ed-e37619821619",
     "bleCharacteristic": "706ff41f-e8d7-4b3b-88c0-c024ca7a41f7"

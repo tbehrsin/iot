@@ -1,0 +1,69 @@
+@import '../../vars';
+
+.container {
+  display: flex;
+  flex-flow: column nowrap;
+  align-items: stretch;
+  overflow: auto;
+  box-sizing: border-box;
+  width: 100vw;
+  height: 100vh;
+
+  > * {
+    width: 100%;
+  }
+}
+
+.content, .header-content {
+  margin: 0 auto;
+  max-width: 1280px;
+  box-sizing: border-box;
+}
+
+.content {
+  padding: 30px;
+}
+
+
+.header {
+  padding: 30px 0 15px;
+  background: $boxColor;
+  min-height: 1.4em;
+  z-index: 2;
+}
+
+.header-content:not(:empty) {
+  margin-bottom: -15px;
+}
+
+.navigation {
+  margin: 0 auto;
+  padding: 0 30px;
+  max-width: 1280px;
+  box-sizing: border-box;
+
+  display: flex;
+  flex-flow: row;
+  align-items: baseline;
+}
+
+.logo {
+  color: $blackColor;
+  font-size: 1.4em;
+
+  strong {
+    color: $foregroundColor;
+    font-weight: 700;
+  }
+}
+
+.footer {
+  font-size: 0.8em;
+  // max-width: 1280px;
+  color: mix($foregroundColor, $backgroundColor, 40);
+  padding: 4px;
+  margin: 0 auto;
+  text-align: right;
+  line-height: 1em;
+  box-sizing: border-box;
+}

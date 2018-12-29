@@ -1,0 +1,60 @@
+@import '../../vars';
+
+.container {
+  align-self: center;
+  width: 100%;
+  max-width: 904px;
+
+  display: flex;
+  flex-flow: row;
+  align-items: stretch;
+}
+
+.columns {
+  flex: 1 1 auto;
+
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: stretch;
+  justify-content: space-between;
+
+  > :nth-child(1) {
+    flex: 1 1 50%;
+
+  }
+
+  > :nth-child(2) {
+    border: 1px solid $boxColor;
+    flex: 1 1 60%;
+    padding: 0.6em;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+}
+
+.links {
+  display: flex;
+  flex-flow: column nowrap;
+  align-items: stretch;
+
+  li {
+
+  }
+
+  a {
+    display: block;
+    text-decoration: none;
+    padding: 0.6em;
+    color: $textColor;
+
+    &:hover {
+      text-decoration: underline;
+      color: $foregroundColor;
+    }
+  }
+
+  .active-link {
+    background: $boxColor;
+    color: $foregroundColor;
+  }
+}

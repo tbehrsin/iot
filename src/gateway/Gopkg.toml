@@ -1,0 +1,6 @@
+
+ignored = ["github.com/behrsin/go-v8"]
+
+[prune]
+  go-tests = true
+  unused-packages = true

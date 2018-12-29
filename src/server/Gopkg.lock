@@ -10,6 +10,22 @@
   version = "v3.2.0"
 
 [[projects]]
+  digest = "1:bd342004ef1bb83bee8709e2ad630e47a95d069f7fcb60ee1b8bceb4bbbe14ae"
+  name = "github.com/gobuffalo/envy"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "801d7253ade1f895f74596b9a96147ed2d3b087e"
+  version = "v1.6.11"
+
+[[projects]]
+  branch = "master"
+  digest = "1:293269f28407fde2aadbad6e67af0e829ada88829a90ceda42b947155f1476d2"
+  name = "github.com/google/tcpproxy"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "dfa16c61dad2b18a385dfb351adf71566720535b"
+
+[[projects]]
   digest = "1:c79fb010be38a59d657c48c6ba1d003a8aa651fa56b579d959d74573b7dff8e1"
   name = "github.com/gorilla/context"
   packages = ["."]
@@ -25,12 +41,60 @@
   revision = "e3702bed27f0d39777b0b37b664b6280e8ef8fbf"
   version = "v1.6.2"
 
+[[projects]]
+  branch = "fix_deadline"
+  digest = "1:876f28d486ad71e7a5c18e2b5a884127c95bbde52b8ea8a64f835452127a1a1d"
+  name = "github.com/hashicorp/yamux"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "d6730accb2374549cdba3b462ac3db4827d75713"
+  source = "github.com/yudai/yamux"
+
+[[projects]]
+  digest = "1:ecd9aa82687cf31d1585d4ac61d0ba180e42e8a6182b85bd785fcca8dfeefc1b"
+  name = "github.com/joho/godotenv"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "23d116af351c84513e1946b527c88823e476be13"
+  version = "v1.3.0"
+
+[[projects]]
+  digest = "1:cbd169f49979ba0bc483cd418da756a21bba0081526d8af0fb0e9218deac2a08"
+  name = "github.com/mailgun/mailgun-go"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "4071f66f00fb74b08ae720f28ee9fcd98ebfd69e"
+  version = "v2.0.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:9f6281d8f50290ba740db82fe5be52877936e47928cd67285ab31b490c202247"
+  name = "github.com/pkg/errors"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "059132a15dd08d6704c67711dae0cf35ab991756"
+
+[[projects]]
+  digest = "1:efafa5160b1666d27e6e1ad4cd3fba27ce73aaaa1e99c3d02e14e55690a8878d"
+  name = "github.com/rogpeppe/go-internal"
+  packages = [
+    "modfile",
+    "module",
+    "semver",
+  ]
+  pruneopts = "UT"
+  revision = "d87f08a7d80821c797ffc8eb8f4e01675f378736"
+  version = "v1.0.0"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
     "github.com/dgrijalva/jwt-go",
+    "github.com/google/tcpproxy",
     "github.com/gorilla/mux",
+    "github.com/hashicorp/yamux",
+    "github.com/mailgun/mailgun-go",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

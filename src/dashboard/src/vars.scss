@@ -1,0 +1,42 @@
+
+$backgroundColor: white;
+$foregroundColor: #4986a1;
+$highlightColor: #2883ab;
+$boxColor: #edf6f9;
+$boxDisabledColor: #edf0f2;
+$textColor: #626f79;
+$borderColor: mix($textColor, $backgroundColor, 50);
+$focusColor: $foregroundColor;
+
+$blackColor: #040809;
+
+$fontFamily: Lato, sans-serif;
+
+$titleLineHeight: 1.42em;
+$titleFontSize: 1.25em;
+$titleFontWeight: 700;
+$titleTextColor: $foregroundColor;
+
+$subtitleLineHeight: 1.2em;
+$subtitleFontSize: 1.125em;
+$subtitleFontWeight: 700;
+$subtitleTextColor: $foregroundColor;
+
+$textLineHeight: 20px;
+$textFontSize: 16px;
+$textFontWeight: 400;
+
+$borderRadius: 3px;
+
+@mixin container() {
+  position: relative;
+  z-index: 1;
+  max-width: 1280px;
+  padding: 30px;
+  box-sizing: border-box;
+  margin: 0 auto;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}

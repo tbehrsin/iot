@@ -1,0 +1,91 @@
+@import '../../vars';
+
+.container {
+  width: 100vw;
+  height: 100vh;
+  background: $backgroundColor;
+  overflow: auto;
+  display: flex;
+
+  flex-flow: column nowrap;
+  align-items: stretch;
+  padding: calc(45px + 1.1em) 15px 15px;
+  box-sizing: border-box;
+}
+
+.header {
+  padding: 15px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1.1em;
+  z-index: 10;
+
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  background: $boxColor;
+
+  > * + * {
+    margin-left: 1em;
+  }
+}
+
+.menu {
+  border: 1px solid mix($foregroundColor, $backgroundColor, 20);
+
+  a {
+    margin: -1px;
+  }
+}
+
+.content {
+  flex: 1 0 auto;
+}
+
+.logo {
+  text-decoration: none;
+
+  color: $blackColor;
+  font-size: 1.1em;
+
+  strong {
+    color: $foregroundColor;
+    font-weight: 700;
+  }
+}
+
+.footer {
+  flex: 0 0 auto;
+  font-size: 0.8em;
+  text-align: right;
+  box-sizing: border-box;
+  color: mix($foregroundColor, $backgroundColor, 40);
+  margin-right: -11px;
+  margin-bottom: -11px;
+  line-height: 1em;
+}
+
+.connection-state {
+  display: inline-block;
+  width: 0.74em;
+  height: 0.74em;
+  // border: 1px solid #883b3b;
+  background: #de3333;
+  border-radius: 100%;
+
+  &.connected {
+    // border: 1px solid #72be2a;
+    background: #65de33;
+  }
+}
+
+.api-requesting {
+  color: $foregroundColor;
+}
+
+.api-error {
+  color: #de3333;
+  font-size: 1em;
+}

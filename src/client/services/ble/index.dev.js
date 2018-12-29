@@ -5,7 +5,8 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 class BleConnection {
   async send(json) {
-    const response = await fetch('http://iot-gateway.local/blemu', {
+    console.info(json);
+    const response = await fetch('http://localhost/blemu', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

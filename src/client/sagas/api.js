@@ -13,18 +13,6 @@ function* connect(action) {
 
   if (token) {
     yield put(actions.api.connect());
-    ws.subscribe('#', (topic, payload) => {
-      console.info(topic, payload);
-    });
-    ws.subscribe('gw/#', (topic, payload) => {
-      console.info(topic, payload);
-    });
-
-    ws.subscribe('gw/90FD9FFFFE7B59D0/heartbeat', (topic, payload) => {
-      console.info(topic, payload);
-    });
-
-    ws.publish('gw/90FD9FFFFE7B59D0/publishstate');
   } else {
     yield put(actions.api.disconnect());
   }

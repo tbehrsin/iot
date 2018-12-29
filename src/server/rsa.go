@@ -35,7 +35,7 @@ func (csr *CreateCertificateRequest) Validate(fqdn string) error {
 		return err
 	} else if c.Subject.CommonName != fqdn {
 		return fmt.Errorf("invalid certificate common name")
-	} else if len(c.ExtraExtensions) != 0 || len(c.Attributes) != 0 || len(c.DNSNames) != 0 || len(c.EmailAddresses) != 0 || len(c.IPAddresses) != 0 || len(c.URIs) != 0 {
+	} else if len(c.ExtraExtensions) != 0 || len(c.Attributes) != 1 || len(c.DNSNames) != 2 || c.DNSNames[0] != fqdn || c.DNSNames[1] != fmt.Sprintf("local.%s", fqdn) || len(c.EmailAddresses) != 0 || len(c.IPAddresses) != 0 || len(c.URIs) != 0 {
 		return fmt.Errorf("invalid certificate extensions")
 	}
 

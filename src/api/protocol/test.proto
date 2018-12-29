@@ -1,0 +1,39 @@
+syntax = "proto3";
+package protocol;
+
+message ReadFileRequest {
+  string path = 1;
+}
+
+message ReadFileResponse {
+  string error = 1;
+  bytes file = 2;
+}
+
+message IsDirRequest {
+  string path = 1;
+}
+
+message IsDirResponse {
+  bool value = 1;
+}
+
+message IsExistRequest {
+  string path = 1;
+}
+
+message IsExistResponse {
+  bool value = 1;
+}
+
+message Message {
+  uint32 id = 1;
+  oneof message {
+    ReadFileRequest readFileRequest = 2;
+    ReadFileResponse readFileResponse = 3;
+    IsDirRequest isDirRequest = 4;
+    IsDirResponse isDirResponse = 5;
+    IsExistRequest isExistRequest = 6;
+    IsExistResponse isExistResponse = 7;
+  }
+}

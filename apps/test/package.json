@@ -1,9 +1,0 @@
-{
-  "name": "test",
-  "main": "index.js",
-  "dependencies": {
-    "@q42philips/hue-color-converter": "^1.0.0",
-    "buffer": "^5.2.1",
-    "color": "^3.1.0"
-  }
-}

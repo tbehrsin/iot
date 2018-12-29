@@ -1,1 +1,13 @@
-{}
+{
+  "ignore_dirs": [
+    "src/api",
+    "src/cli",
+    "src/dashboard",
+    "src/db",
+    "src/dns",
+    "src/gateway",
+    "src/inspector",
+    "src/server",
+    "src/zigbee"
+  ]
+}

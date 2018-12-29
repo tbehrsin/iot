@@ -1,0 +1,63 @@
+
+@import '~meyer-reset-scss/_reset-src.scss';
+@import './vars';
+
+@import './fonts/lato/index';
+@import '~@fortawesome/fontawesome-free/scss/fontawesome.scss';
+@import '~@fortawesome/fontawesome-free/scss/regular.scss';
+@import '~@fortawesome/fontawesome-free/scss/solid.scss';
+
+html, body {
+  font-family: $fontFamily;
+  color: $textColor;
+  font-size: $textFontSize;
+  font-weight: $textFontWeight;
+  line-height: $textLineHeight;
+  -webkit-font-smoothing: subpixel-antialiased;
+  -webkit-user-select: none;
+  cursor: default;
+  background: $backgroundColor;
+  overflow: hidden;
+}
+
+h1 {
+  font-size: $titleFontSize;
+  font-weight: $titleFontWeight;
+  color: $titleTextColor;
+  line-height: $titleLineHeight;
+}
+
+h2 {
+  font-size: $subtitleFontSize;
+  font-weight: $subtitleFontWeight;
+  color: $subtitleTextColor;
+  line-height: $subtitleLineHeight;
+}
+
+h3 {
+  color: $blackColor;
+  font-weight: $subtitleFontWeight;
+}
+
+a {
+  color: $foregroundColor;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+p {
+  text-align: justify;
+}
+
+p + p {
+  margin-top: 1em;
+}
+
+button {
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  background: none;
+  outline: none;
+}

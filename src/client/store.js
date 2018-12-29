@@ -14,20 +14,21 @@ const persistConfig = {
   storage
 };
 
-const middleware = [];
-middleware.push(thunk);
-
-const sagaMiddleware = createSagaMiddleware()
-middleware.push(sagaMiddleware);
-
-const enhancers = window.__REDUX_DEVTOOLS_EXTENSION__ ? compose(applyMiddleware(...middleware), window.__REDUX_DEVTOOLS_EXTENSION__()) : applyMiddleware(...middleware);
-
-const reducer = combineReducers(reducers);
-const persistedReducer = persistReducer(persistConfig, reducer);
-export const store = createStore(persistedReducer, enhancers);
-
-export const persistor = persistStore(store);
-
 export const initialize = () => {
+  const middleware = [];
+  middleware.push(thunk);
+
+  const sagaMiddleware = createSagaMiddleware()
+  middleware.push(sagaMiddleware);
+
+  const enhancers = window.__REDUX_DEVTOOLS_EXTENSION__ ? compose(applyMiddleware(...middleware), window.__REDUX_DEVTOOLS_EXTENSION__()) : applyMiddleware(...middleware);
+
+  const reducer = combineReducers(reducers);
+  const persistedReducer = persistReducer(persistConfig, reducer);
+  const store = createStore(persistedReducer, enhancers);
+  const persistor = persistStore(store);
+
   require('./sagas').default.map(sagaMiddleware.run);
+  
+  return { store, persistor };
 };

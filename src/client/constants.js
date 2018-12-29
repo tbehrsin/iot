@@ -2,6 +2,7 @@
 export const API_REQUEST_BEGIN = 'api/REQUEST_BEGIN';
 export const API_REQUEST_END = 'api/REQUEST_END';
 export const API_REQUEST_ERROR = 'api/REQUEST_ERROR';
+export const API_SET_IN = 'api/SET_IN';
 export const API_REQUEST_RESET = 'api/REQUEST_RESET';
 export const API_CONNECT_BEGIN = 'api/CONNECT_BEGIN';
 export const API_CONNECT_END = 'api/CONNECT_END';

@@ -5,6 +5,10 @@ import {
   API_REQUEST_END,
   API_REQUEST_ERROR,
 
+  API_REQUEST_RESET,
+
+  API_SET_IN,
+
   API_CONNECT_BEGIN,
   API_CONNECT_END,
   API_CONNECT_ERROR,
@@ -16,6 +20,12 @@ import {
   API_STATE_CONNECTED
 } from '../constants';
 import * as selectors from '../selectors';
+import { constants as config } from '../../../app.json';
+
+export const reset = (key) => ({
+  type: API_REQUEST_RESET,
+  payload: { key }
+});
 
 export const request = (key, { method = 'GET', path = '/', query = {}, body = null }) => async (dispatch, getState) => {
   dispatch({
@@ -26,8 +36,8 @@ export const request = (key, { method = 'GET', path = '/', query = {}, body = nu
   const token = selectors.auth.getToken(getState());
 
   try {
-    console.info(`https://z3js.net${path}`, method, body);
-    const response = await fetch(`https://z3js.net${path}`, {
+    console.info(`${config.url}${path}`, method, body);
+    const response = await fetch(`${config.url}${path}`, {
       method,
       headers: {
         'X-Authorization': `Bearer ${token}`,
@@ -47,9 +57,14 @@ export const request = (key, { method = 'GET', path = '/', query = {}, body = nu
       return;
     }
 
+    let url = response.url;
+    // strip out any unneeded port as this is likely to cause problems with other user agents
+    url = url.replace(/^(https:\/\/[^\/]+):443\//, (g, g1) => `${g1}/`)
+    url = url.replace(/^(http:\/\/[^\/]+):80\//, (g, g1) => `${g1}/`)
+
     dispatch({
       type: API_REQUEST_END,
-      payload: { key, body: json.body }
+      payload: { key, body: json.body, url }
     });
   } catch (error) {
     error = new ResourceError(error);
@@ -61,6 +76,15 @@ export const request = (key, { method = 'GET', path = '/', query = {}, body = nu
   }
 };
 
+export const setIn = (key, path, value) => ({
+  type: API_SET_IN,
+  payload: {
+    key,
+    path,
+    value
+  }
+});
+
 export const connect = () => async (dispatch, getState) => {
   dispatch({
     type: API_CONNECT_BEGIN
@@ -69,7 +93,7 @@ export const connect = () => async (dispatch, getState) => {
   const token = selectors.auth.getToken(getState());
 
   try {
-    const response = await fetch(`https://z3js.net/`, {
+    const response = await fetch(`${config.url}/`, {
       method: 'OPTIONS',
       headers: {
         'X-Authorization': `Bearer ${token}`

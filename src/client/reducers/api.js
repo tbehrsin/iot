@@ -4,6 +4,9 @@ import {
   API_REQUEST_BEGIN,
   API_REQUEST_END,
   API_REQUEST_ERROR,
+
+  API_SET_IN,
+
   API_REQUEST_RESET,
   API_CONNECT_BEGIN,
   API_CONNECT_END,
@@ -32,12 +35,16 @@ export default (state = fromJS(initialState), { type, payload }) => {
       return state.setIn(['requests', key], fromJS({}));
     }
     case API_REQUEST_END: {
-      const { key, body } = payload;
-      return state.setIn(['requests', key, 'body'], fromJS(body));
+      const { key, body, url } = payload;
+      return state.setIn(['requests', key, 'body'], fromJS(body)).setIn(['requests', key, 'url'], url);
     }
     case API_REQUEST_ERROR: {
       const { key, error } = payload;
       return state.setIn(['requests', key, 'error'], fromJS(error));
+    }
+    case API_SET_IN: {
+      const { key, path, value } = payload;
+      return state.setIn(['requests', key, 'body', ...path], fromJS(value));
     }
     case API_REQUEST_RESET: {
       const { key } = payload;

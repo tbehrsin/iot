@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"fmt"
-	"log"
 	"strings"
 
 	"cloud.google.com/go/datastore"
@@ -14,10 +13,12 @@ import (
 )
 
 type Gateway struct {
-	ID        string `datastore:"id"`
-	Address   string `datastore:"address,noindex"`
-	Port      int    `datastore:"port,noindex"`
-	PublicKey string `datastore:"publicKey,noindex"`
+	ID           string `datastore:"id"`
+	IsOrigin     bool   `datastore:"isOrigin,noindex"`
+	Address      string `datastore:"address,noindex"`
+	Port         int    `datastore:"port,noindex"`
+	LocalAddress string `datastore:"localAddress,noindex"`
+	PublicKey    string `datastore:"publicKey,noindex"`
 }
 
 func (g *Gateway) FQDN() string {
@@ -58,7 +59,6 @@ func (g *Gateway) MarshalPublicKey(publicKey *rsa.PublicKey) error {
 
 func GetGateway(id string) (*Gateway, error) {
 	k := datastore.NameKey("Gateway", id, nil)
-	log.Println(id, k)
 	gw := new(Gateway)
 
 	c := context.Background()

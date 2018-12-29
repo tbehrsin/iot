@@ -1,0 +1,47 @@
+@import '../../vars';
+
+.content {
+  @include container;
+}
+
+.header {
+  padding: 15px 30px;
+
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  justify-content: center;
+
+  > * {
+    width: 50%;
+    max-width: 486px;
+  }
+
+  > *:first-child {
+    text-align: right;
+  }
+
+  > * + * {
+    margin-left: 20px;
+  }
+
+  font-size: $titleFontSize;
+  line-height: $titleLineHeight;
+}
+
+@media (max-width: 480px) {
+  .header {
+    flex-flow: column-reverse;
+
+
+    > * {
+      width: 80%;
+      object-fit: contain;
+      text-align: center !important;
+    }
+  }
+}
+
+.text {
+  -webkit-user-select: text;
+}

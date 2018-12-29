@@ -30,7 +30,7 @@ func alias(name string, cname string, res *dns.Msg) {
 	}
 	for _, a := range r.Answer {
 		if rr, ok := a.(*dns.A); ok {
-			if out, err := dns.NewRR(fmt.Sprintf("%s 300 IN A %s", name, rr.A.String())); err == nil {
+			if out, err := dns.NewRR(fmt.Sprintf("%s 30 IN A %s", name, rr.A.String())); err == nil {
 				res.Answer = append(res.Answer, out)
 			}
 		}
@@ -70,11 +70,17 @@ func server(w dns.ResponseWriter, r *dns.Msg) {
 			} else if q.Qtype == dns.TypeA {
 				id := strings.TrimSuffix(name, fmt.Sprintf(".%s", Domain))
 
-				if id == "ca" {
+				if id == "ca" || id == "proxy" {
 					alias(name, NS1, m)
 					alias(name, NS2, m)
+				} else if strings.HasPrefix(id, "local.") {
+					if gw, _ := db.GetGateway(strings.TrimPrefix(id, "local.")); gw != nil {
+						if rr, err := dns.NewRR(fmt.Sprintf("%s 10 IN A %s", name, gw.LocalAddress)); err == nil {
+							m.Answer = append(m.Answer, rr)
+						}
+					}
 				} else if gw, _ := db.GetGateway(id); gw != nil {
-					if rr, err := dns.NewRR(fmt.Sprintf("%s 300 IN A %s", name, gw.Address)); err == nil {
+					if rr, err := dns.NewRR(fmt.Sprintf("%s 30 IN A %s", name, gw.Address)); err == nil {
 						m.Answer = append(m.Answer, rr)
 					}
 				}

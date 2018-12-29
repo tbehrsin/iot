@@ -1,0 +1,11 @@
+@import '../../vars';
+
+.container {
+  background: $foregroundColor;
+  color: white;
+  font-size: $subtitleFontSize;
+  font-weight: $subtitleFontWeight;
+  padding: 0.4em;
+  cursor: pointer;
+  text-decoration: none;
+}

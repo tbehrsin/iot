@@ -130,8 +130,8 @@ export const authenticate = (pin) => async (dispatch, getState) => {
     type: AUTH_AUTHENTICATE_END
   });
 
-  history.go(-history.entries.length);
-  history.push('/');
+  history.go(-history.index);
+  history.replace('/');
 };
 
 export const setToken = (token) => ({

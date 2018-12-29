@@ -1,8 +1,8 @@
 package main
 
 import (
-	"iot/net"
-	"iot/zigbee"
+	"gateway/net"
+	"gateway/zigbee"
 	"log"
 	"os"
 	"os/signal"

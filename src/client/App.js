@@ -9,7 +9,7 @@ import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 
 import { history } from './router';
-import { store, persistor, initialize as initializeStore } from './store';
+import { initialize as initializeStore } from './store';
 import { initialize as initializeServices } from './services';
 import * as selectors from './selectors';
 import * as actions from './actions';
@@ -56,13 +56,13 @@ export default class extends React.Component {
   constructor(initialProps) {
     super(initialProps);
     initializeServices(initialProps);
-    initializeStore();
+    Object.assign(this, initializeStore());
   }
 
   render() {
     return (
-      <Provider store={store}>
-        <PersistGate loading={null} persistor={persistor}>
+      <Provider store={this.store}>
+        <PersistGate loading={null} persistor={this.persistor}>
           <Router history={history}>
             <Route component={App} />
           </Router>

@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
-	"strings"
 
 	"github.com/gorilla/mux"
 )
@@ -49,7 +49,9 @@ func api() http.Handler {
 
 func private() http.Handler {
 	r := mux.NewRouter()
+	r.HandleFunc("/api/v1/gateway/local", SetLocalAddress).Methods("PUT")
 	r.HandleFunc("/api/v1/gateway/", UpdateGateway).Methods("PUT")
+	r.HandleFunc("/api/v1/auth/", CreateEmailToken).Methods("POST")
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("404 Not Found"))
@@ -94,7 +96,7 @@ func CreateGateway(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	addr := strings.Split(r.RemoteAddr, ":")[0]
+	addr, _, _ := net.SplitHostPort(r.RemoteAddr)
 
 	if gw, err := db.CreateGateway(addr, int(request.Port)); err != nil {
 		APIError(w, err)
@@ -121,7 +123,39 @@ func UpdateGateway(w http.ResponseWriter, r *http.Request) {
 	}
 
 	gw := r.Context().Value(GatewayContextKey).(*db.Gateway)
+	gw.Address, _, _ = net.SplitHostPort(r.RemoteAddr)
 	gw.Port = int(request.Port)
+
+	if err := gw.Update(); err != nil {
+		APIError(w, err)
+		return
+	} else {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte{})
+		return
+	}
+}
+
+type SetLocalAddressRequest struct {
+	LocalAddress string `json:"localAddress"`
+}
+
+type SetLocalAddressResponse struct {
+}
+
+func SetLocalAddress(w http.ResponseWriter, r *http.Request) {
+	var request SetLocalAddressRequest
+
+	if body, err := ioutil.ReadAll(r.Body); err != nil {
+		APIError(w, err)
+		return
+	} else if err := json.Unmarshal([]byte(body), &request); err != nil {
+		APIError(w, err)
+		return
+	}
+
+	gw := r.Context().Value(GatewayContextKey).(*db.Gateway)
+	gw.LocalAddress = request.LocalAddress
 
 	if err := gw.Update(); err != nil {
 		APIError(w, err)
