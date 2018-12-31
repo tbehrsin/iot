@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"gateway/events"
 	"gateway/net"
-	"log"
 	"strings"
 	"sync"
 	"time"
@@ -172,7 +171,20 @@ func (d *Device) V8FuncRead(in v8.FunctionArgs) (*v8.Value, error) {
 	if r, err := in.Context.NewResolver(); err != nil {
 		return nil, err
 	} else {
-		go d.readSubscriber(in.Context, r, fmt.Sprintf("attr:%d:%d:%s", ep, clusterId.Value, strings.Join(list, ":")))
+		channel := d.Once(fmt.Sprintf("attr:%d:%d:%s", ep, clusterId.Value, strings.Join(list, ":")))
+
+		go func() {
+			select {
+			case <-time.After(30 * time.Second):
+				if err := r.Reject(fmt.Errorf("read timeout")); err != nil {
+					panic(err)
+				}
+			case e := <-channel.Receive():
+				if err := r.Resolve(e.Args[0]); err != nil {
+					panic(err)
+				}
+			}
+		}()
 
 		d.gateway.commands <- CommandListMessage{[]Command{
 			Command{fmt.Sprintf("raw %s %s", clusterId, CommandData(buf).bracketString()), 0},
@@ -180,27 +192,6 @@ func (d *Device) V8FuncRead(in v8.FunctionArgs) (*v8.Value, error) {
 		}}
 
 		return r.Promise(), nil
-	}
-}
-
-func (d *Device) readSubscriber(context *v8.Context, r *v8.Resolver, channelName string) {
-	channel := d.Once(channelName)
-
-	e := <-channel.Receive()
-
-	if value, err := context.Create(e.Args[0]); err != nil {
-		log.Println(err)
-		if errorObject, err2 := context.Create(err); err2 != nil {
-			panic(err2)
-		} else {
-			if err := r.Reject(errorObject); err != nil {
-				log.Println(err)
-			}
-		}
-	} else {
-		if err := r.Resolve(value); err != nil {
-			log.Println(err)
-		}
 	}
 }
 
@@ -214,7 +205,6 @@ func (d *Device) V8FuncSend(in v8.FunctionArgs) (*v8.Value, error) {
 		Command{fmt.Sprintf("raw %s %s", clusterId, CommandData(data).bracketString()), 0},
 		Command{fmt.Sprintf("send %s 0x01 %s", d.NodeID, ep), 0},
 	}}
-	// d.gateway.commands <- fmt.Sprintf("send %s %s %s", d.NodeID, ep, ep)
 
 	return nil, nil
 }

@@ -168,15 +168,14 @@ func (d *DeveloperMode) HandleWebSocket(w http.ResponseWriter, r *http.Request) 
 
 	defer func() {
 		if app != nil {
-			defer log.Println("DeveloperMode: terminating app")
 			app.Terminate()
+			app = nil
 		}
 	}()
 	defer c.Close()
 	defer close(write)
 	defer close(read)
 
-	defer log.Println("DeveloperMode: closing reader")
 	go func() {
 		for {
 			message, more := <-write
@@ -187,7 +186,6 @@ func (d *DeveloperMode) HandleWebSocket(w http.ResponseWriter, r *http.Request) 
 				break
 			}
 		}
-		defer log.Println("DeveloperMode: closing writer")
 	}()
 
 	if err := p.Run(d, read, write); err != nil {

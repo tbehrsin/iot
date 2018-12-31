@@ -36,6 +36,7 @@ func NewController(in v8.FunctionArgs) (*Controller, error) {
 			fmt.Sprintf("%s %s", device.device.GetManufacturer(), device.device.GetModel()),
 			"/index.html",
 		}
+		// in.Context.GetIsolate().AddShutdownHook(c)
 		return c, nil
 	}
 }
@@ -111,4 +112,15 @@ func (c *Controller) SetState(state map[string]interface{}, force bool) error {
 
 func (c *Controller) Application() api.Application {
 	return c.app
+}
+
+func (c *Controller) ShutdownIsolate(i *v8.Isolate) {
+	c.state = nil
+	c.value = nil
+	c.context = nil
+	c.stateCache = nil
+	c.app = nil
+	c.device.Holder().Publish()
+	c.device.controller = nil
+	c.device.value = nil
 }

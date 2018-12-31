@@ -1,4 +1,5 @@
 
+required = ["github.com/behrsin/go-refutils"]
 ignored = ["github.com/behrsin/go-v8"]
 
 [prune]

@@ -46,7 +46,7 @@ zigbee: bin/iot-zigbee
 	bin/iot-zigbee
 
 iot: bin/iot-gateway
-	@cd apps; DATABASE_FILE=$(shell pwd)/z3js.db BLUETOOTH_EMULATION=true ../bin/iot-gateway
+	@cd apps; DATABASE_FILE=$(shell pwd)/z3js.db BLUETOOTH_EMULATION=true ../bin/iot-gateway -profile
 
 dns: bin/iot-dns
 	PORT=8053 bin/iot-dns

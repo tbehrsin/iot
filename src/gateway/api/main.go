@@ -43,6 +43,7 @@ type API struct {
 	mqttClient        mqtt.Client
 	inspectorMessages chan []byte
 	running           bool
+	gateway           *Gateway
 }
 
 func NewAPI() (*API, error) {

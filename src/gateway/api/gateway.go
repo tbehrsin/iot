@@ -37,6 +37,10 @@ type gatewayStore struct {
 }
 
 func (api *API) Gateway() (*Gateway, error) {
+	if api.gateway != nil {
+		return api.gateway, nil
+	}
+
 	var in gatewayStore
 	found := false
 
@@ -82,6 +86,7 @@ func (api *API) Gateway() (*Gateway, error) {
 		}
 	}
 
+	api.gateway = g
 	return g, nil
 }
 

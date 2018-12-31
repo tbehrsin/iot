@@ -4,9 +4,9 @@ import (
 	"api"
 	"encoding/json"
 	"gateway/net"
-	"os"
 	"path/filepath"
 	"reflect"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -88,15 +88,7 @@ func (r *Registry) Load(backend api.Backend) (api.Application, error) {
 	}
 
 	a.isolate = v8.NewIsolate()
-	a.isolate.StartTracer(v8.SimpleTracer)
 	a.context = a.isolate.NewContext()
-
-	go func() {
-		for {
-			a.isolate.DumpTracer(os.Stdout, false)
-			time.Sleep(1 * time.Second)
-		}
-	}()
 
 	a.createContext()
 
@@ -106,7 +98,7 @@ func (r *Registry) Load(backend api.Backend) (api.Application, error) {
 		a.Module = module
 	}
 
-	r.inspector.AddApp(a)
+	//r.inspector.AddApp(a)
 	return a, nil
 }
 
@@ -169,7 +161,7 @@ func (a *App) setTimeout(in v8.FunctionArgs) (*v8.Value, error) {
 }
 
 func (a *App) Terminate() {
-	a.registry.inspector.RemoveApp(a)
+	// a.registry.inspector.RemoveApp(a)
 	a.isolate.Terminate()
 	a.Module = nil
 	a.moduleCache = nil
@@ -179,6 +171,7 @@ func (a *App) Terminate() {
 	a.context = nil
 	a.value = nil
 	a.routes = nil
+	debug.FreeOSMemory()
 }
 
 func (a *App) Backend() api.Backend {
