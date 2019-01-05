@@ -13,43 +13,45 @@ type ClientProtocol struct {
 }
 
 type ClientInterface interface {
-	ProtocolError(err error)
 	ReadFile(path string, writer io.Writer) error
 	IsDir(path string) bool
 	IsExist(path string) bool
 }
 
-func (p *ClientProtocol) Run(client ClientInterface, read chan []byte, write chan []byte) error {
+func NewClientProtocol(client ClientInterface, read chan []byte, write chan []byte) *ClientProtocol {
+	p := &ClientProtocol{}
+	p.running = false
+	p.read = read
+	p.write = write
+	p.client = client
+	p.transactions = make(map[uint32]chan interface{})
+	return p
+}
+
+func (p *ClientProtocol) Run() error {
 	if p.running {
 		return fmt.Errorf("client protocol already running")
 	}
-	p.running = true
-	p.write = write
-	p.client = client
 
-	go func() {
-		for {
-			message, more := <-read
+	for {
+		message, more := <-p.read
 
-			if more {
-				p.ReadMessage(p, message)
-			} else {
-				break
+		if more {
+			if err := p.ReadMessage(p, message); err != nil {
+				return err
 			}
+		} else {
+			break
 		}
-	}()
+	}
 
 	return nil
 }
 
-func (p *ClientProtocol) onProtocolError(err error) {
-	p.client.ProtocolError(err)
-}
-
-func (p *ClientProtocol) onReadFileRequest(id uint32, m *protobuf.ReadFileRequest) {
+func (p *ClientProtocol) onReadFileRequest(id uint32, m *protobuf.ReadFileRequest) error {
 	var buf bytes.Buffer
 	if err := p.client.ReadFile(m.Path, &buf); err != nil {
-		p.WriteMessage(p, &protobuf.Message{
+		return p.WriteMessage(p, &protobuf.Message{
 			Id: id,
 			Message: &protobuf.Message_ReadFileResponse{
 				ReadFileResponse: &protobuf.ReadFileResponse{
@@ -58,7 +60,7 @@ func (p *ClientProtocol) onReadFileRequest(id uint32, m *protobuf.ReadFileReques
 			},
 		})
 	} else {
-		p.WriteMessage(p, &protobuf.Message{
+		return p.WriteMessage(p, &protobuf.Message{
 			Id: id,
 			Message: &protobuf.Message_ReadFileResponse{
 				ReadFileResponse: &protobuf.ReadFileResponse{
@@ -69,8 +71,8 @@ func (p *ClientProtocol) onReadFileRequest(id uint32, m *protobuf.ReadFileReques
 	}
 }
 
-func (p *ClientProtocol) onIsDirRequest(id uint32, m *protobuf.IsDirRequest) {
-	p.WriteMessage(p, &protobuf.Message{
+func (p *ClientProtocol) onIsDirRequest(id uint32, m *protobuf.IsDirRequest) error {
+	return p.WriteMessage(p, &protobuf.Message{
 		Id: id,
 		Message: &protobuf.Message_IsDirResponse{
 			IsDirResponse: &protobuf.IsDirResponse{
@@ -80,8 +82,8 @@ func (p *ClientProtocol) onIsDirRequest(id uint32, m *protobuf.IsDirRequest) {
 	})
 }
 
-func (p *ClientProtocol) onIsExistRequest(id uint32, m *protobuf.IsExistRequest) {
-	p.WriteMessage(p, &protobuf.Message{
+func (p *ClientProtocol) onIsExistRequest(id uint32, m *protobuf.IsExistRequest) error {
+	return p.WriteMessage(p, &protobuf.Message{
 		Id: id,
 		Message: &protobuf.Message_IsExistResponse{
 			IsExistResponse: &protobuf.IsExistResponse{

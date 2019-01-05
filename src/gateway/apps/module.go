@@ -50,7 +50,7 @@ func (a *App) NewModuleFromFile(filename string, parent *Module) (*Module, error
 			Children: []*Module{},
 		}
 
-		// a.isolate.AddShutdownHook(m)
+		//		a.isolate.AddShutdownHook(m.shutdownIsolate)
 
 		a.moduleCache[filename] = m
 
@@ -167,7 +167,7 @@ func (m *Module) newPaths() ([]string, error) {
 	return out, nil
 }
 
-func (m *Module) ShutdownIsolate(i *v8.Isolate) {
+func (m *Module) shutdownIsolate(i *v8.Isolate) {
 	m.App = nil
 	m.require = nil
 	m.value = nil

@@ -91,7 +91,8 @@ func (n UInt16) MarshalV8() interface{} {
 }
 
 func V8Uint16(v *v8.Value) UInt16 {
-	return UInt16{uint16(v.Float64())}
+	v64, _ := v.Float64()
+	return UInt16{uint16(v64)}
 }
 
 type UInt8 struct {
@@ -126,7 +127,8 @@ func (n UInt8) MarshalV8() interface{} {
 }
 
 func V8Uint8(v *v8.Value) UInt8 {
-	return UInt8{uint8(v.Float64())}
+	v64, _ := v.Float64()
+	return UInt8{uint8(v64)}
 }
 
 type NodeID struct {
@@ -224,21 +226,22 @@ func (d *DeviceEndpoint) MatchAll(clusters []Cluster) bool {
 func (d *DeviceEndpoint) V8MatchAll(vclusters *v8.Value) (bool, error) {
 	if vlength, err := vclusters.Get("length"); err != nil {
 		return false, err
-	} else if length := int(vlength.Int64()); length > 0 {
+	} else if length, err := vlength.Int64(); err != nil && length > 0 {
 		clusters := make([]Cluster, length)
 
-		for i := 0; i < length; i++ {
+		for i := int64(0); i < length; i++ {
 			var clusterId ClusterID
 			var clusterType ClusterType
 
-			if vcluster, err := vclusters.GetIndex(i); err != nil {
+			if vcluster, err := vclusters.GetIndex(int(i)); err != nil {
 				return false, err
 			} else if vclusterId, err := vcluster.Get("id"); err != nil {
 				return false, err
 			} else if vclusterType, err := vcluster.Get("type"); err != nil {
 				return false, err
 			} else {
-				clusterId = ClusterID{UInt16{uint16(vclusterId.Int64())}}
+				cluster64, _ := vclusterId.Int64()
+				clusterId = ClusterID{UInt16{uint16(cluster64)}}
 				clusterType = V8ClusterType(vclusterType)
 
 				clusters[i] = Cluster{clusterType, clusterId}

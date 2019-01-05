@@ -2,16 +2,13 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"gateway/api"
 	"gateway/ble"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
-	"runtime"
 	"syscall"
-	"time"
 
 	netpprof "net/http/pprof"
 
@@ -33,11 +30,39 @@ func main() {
 	// 	defer pprof.StopCPUProfile()
 	// }
 
-	http.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("dist/assets/"))))
+	// http.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("dist/assets/"))))
+	//
+	// http.HandleFunc("/renderer.js", func(w http.ResponseWriter, r *http.Request) {
+	// 	http.ServeFile(w, r, "dist/renderer.js")
+	// })
 
-	http.HandleFunc("/renderer.js", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "dist/renderer.js")
-	})
+	if *profile {
+		go func() {
+			r := mux.NewRouter()
+			r.PathPrefix("/debug/pprof/").HandlerFunc(netpprof.Index)
+			r.Handle("/debug/v8/", v8.TracerHandler())
+			log.Println(http.ListenAndServe("localhost:6060", r))
+		}()
+
+		v8.StartTracer(v8.SimpleTracer)
+		v8.EnableAllocationStackTraces()
+
+		// go func() {
+		// 	for {
+		// 		v8.DumpTracer(os.Stdout, false)
+		//
+		// 		// var m runtime.MemStats
+		// 		// runtime.ReadMemStats(&m)
+		// 		// // For info on each, see: https://golang.org/pkg/runtime/#MemStats
+		// 		// fmt.Printf("Alloc = %v", m.Alloc)
+		// 		// fmt.Printf("\tTotalAlloc = %v", m.TotalAlloc)
+		// 		// fmt.Printf("\tSys = %v", m.Sys)
+		// 		// fmt.Printf("\tNumGC = %v\n", m.NumGC)
+		//
+		// 		time.Sleep(1 * time.Second)
+		// 	}
+		// }()
+	}
 
 	api, _ := api.NewAPI()
 	defer api.Stop()
@@ -52,31 +77,6 @@ func main() {
 	go func() {
 		ble.Start()
 	}()
-
-	if *profile {
-		go func() {
-			r := mux.NewRouter()
-			r.PathPrefix("/debug/pprof/").HandlerFunc(netpprof.Index)
-			log.Println(http.ListenAndServe("localhost:6060", r))
-		}()
-
-		v8.StartTracer(v8.SimpleTracer)
-		v8.EnableAllocationStackTraces()
-		go func() {
-			for {
-				v8.DumpTracer(os.Stdout, false)
-				var m runtime.MemStats
-				runtime.ReadMemStats(&m)
-				// For info on each, see: https://golang.org/pkg/runtime/#MemStats
-				fmt.Printf("Alloc = %v", m.Alloc)
-				fmt.Printf("\tTotalAlloc = %v", m.TotalAlloc)
-				fmt.Printf("\tSys = %v", m.Sys)
-				fmt.Printf("\tNumGC = %v\n", m.NumGC)
-
-				time.Sleep(1 * time.Second)
-			}
-		}()
-	}
 
 	go func() {
 		for {

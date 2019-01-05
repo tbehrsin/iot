@@ -6,7 +6,6 @@ import (
 	"gateway/net"
 	"path/filepath"
 	"reflect"
-	"runtime/debug"
 	"strings"
 	"time"
 
@@ -88,17 +87,21 @@ func (r *Registry) Load(backend api.Backend) (api.Application, error) {
 	}
 
 	a.isolate = v8.NewIsolate()
-	a.context = a.isolate.NewContext()
+	a.isolate.SetData("app", a)
+	a.context, _ = a.isolate.NewContext()
+	global, _ := a.context.Global()
 
-	a.createContext()
-
-	if module, err := a.NewModuleFromFile(p.Main(), nil); err != nil {
+	if err := a.createContext(global); err != nil {
+		a.Terminate()
+		return nil, err
+	} else if module, err := a.NewModuleFromFile(p.Main(), nil); err != nil {
+		a.Terminate()
 		return nil, err
 	} else {
 		a.Module = module
 	}
 
-	//r.inspector.AddApp(a)
+	r.inspector.AddApp(a)
 	return a, nil
 }
 
@@ -106,30 +109,30 @@ func (a *App) Context() *v8.Context {
 	return a.context
 }
 
-func (a *App) createContext() error {
-	if err := a.context.Global().Set("global", a.context.Global()); err != nil {
+func (a *App) createContext(global *v8.Value) error {
+	if err := global.Set("global", global); err != nil {
 		return err
-	} else if err := a.injectApp(); err != nil {
+	} else if err := a.injectApp(global); err != nil {
 		return err
-	} else if err := a.injectRouter(); err != nil {
+	} else if err := a.injectRouter(global); err != nil {
 		return err
-	} else if err := a.injectGateways(); err != nil {
+	} else if err := a.injectGateways(global); err != nil {
 		return err
 	}
 
 	if jso, err := a.context.Create(a.setTimeout); err != nil {
 		return err
-	} else if err := a.context.Global().Set("setTimeout", jso); err != nil {
+	} else if err := global.Set("setTimeout", jso); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (a *App) injectApp() error {
+func (a *App) injectApp(global *v8.Value) error {
 	if jso, err := a.context.Create(a); err != nil {
 		return err
-	} else if err := a.context.Global().Set("app", jso); err != nil {
+	} else if err := global.Set("app", jso); err != nil {
 		return err
 	} else {
 		a.value = jso
@@ -140,11 +143,11 @@ func (a *App) injectApp() error {
 	return nil
 }
 
-func (a *App) injectGateways() error {
+func (a *App) injectGateways(global *v8.Value) error {
 	for _, gateway := range a.network.Gateways() {
 		if jso, err := a.context.Create(gateway); err != nil {
 			return err
-		} else if err := a.context.Global().Set(gateway.Protocol(), jso); err != nil {
+		} else if err := global.Set(gateway.Protocol(), jso); err != nil {
 			return err
 		}
 	}
@@ -153,16 +156,21 @@ func (a *App) injectGateways() error {
 }
 
 func (a *App) setTimeout(in v8.FunctionArgs) (*v8.Value, error) {
+	duration, _ := in.Args[1].Int64()
+	fn := in.Args[0]
+
 	go func() {
-		time.Sleep(time.Duration(in.Args[1].Int64()) * time.Millisecond)
-		in.Args[0].Call(nil)
+		time.Sleep(time.Duration(duration) * time.Millisecond)
+		go fn.Call(nil)
 	}()
 	return nil, nil
 }
 
 func (a *App) Terminate() {
-	// a.registry.inspector.RemoveApp(a)
-	a.isolate.Terminate()
+	a.registry.inspector.RemoveApp(a)
+	if a.isolate != nil {
+		a.isolate.Terminate()
+	}
 	a.Module = nil
 	a.moduleCache = nil
 	a.backend = nil
@@ -171,7 +179,6 @@ func (a *App) Terminate() {
 	a.context = nil
 	a.value = nil
 	a.routes = nil
-	debug.FreeOSMemory()
 }
 
 func (a *App) Backend() api.Backend {

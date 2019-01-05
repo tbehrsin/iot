@@ -159,24 +159,29 @@ func (d *DeveloperMode) HandleWebSocket(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	var app api.Application
-
-	p := &api.ServerProtocol{}
-
 	write := make(chan []byte)
 	read := make(chan []byte)
+	app := make(chan bool)
+
+	p := api.NewServerProtocol(d, read, write)
 
 	defer func() {
-		if app != nil {
-			app.Terminate()
-			app = nil
-		}
+		app <- false
+		close(app)
 	}()
 	defer c.Close()
 	defer close(write)
 	defer close(read)
 
 	go func() {
+		defer func() {
+			defer c.Close()
+			if err := recover(); err != nil {
+				// return here as there is probably only the error on the socket
+				log.Println(err)
+			}
+		}()
+
 		for {
 			message, more := <-write
 
@@ -188,15 +193,20 @@ func (d *DeveloperMode) HandleWebSocket(w http.ResponseWriter, r *http.Request) 
 		}
 	}()
 
-	if err := p.Run(d, read, write); err != nil {
-		log.Println("error running server protocol:", err)
-	}
+	go func() {
+		defer c.Close()
+		if err := p.Run(); err != nil {
+			log.Println("error running server protocol:", err)
+			return
+		}
+	}()
 
 	go func() {
 		if a, err := d.api.Registry.Load(p); err != nil {
 			log.Println("error loading client application:", err)
 		} else {
-			app = a
+			<-app
+			a.Terminate()
 		}
 	}()
 

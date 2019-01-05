@@ -3,11 +3,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:213b71c2cfff39d1e5b1cbd17670eefb1f31d8dc80986dfda5cb195a43f37b84"
+  digest = "1:bae554956169c2b5f22b2a39053600ce7b78c4b00a48e84d89ca5cf50cc08046"
   name = "github.com/behrsin/go-refutils"
   packages = ["."]
   pruneopts = "UT"
-  revision = "d7cf99e36264d2ea40c638e6f06a48e551c296d8"
+  revision = "b7ccd5996b32c885c8293b1769534db26a0eda15"
 
 [[projects]]
   digest = "1:0f98f59e9a2f4070d66f0c9c39561f68fcd1dc837b22a852d28d0003aebd1b1e"

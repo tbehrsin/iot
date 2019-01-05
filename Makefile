@@ -48,6 +48,9 @@ zigbee: bin/iot-zigbee
 iot: bin/iot-gateway
 	@cd apps; DATABASE_FILE=$(shell pwd)/z3js.db BLUETOOTH_EMULATION=true ../bin/iot-gateway -profile
 
+iot-debug:
+	@cd apps; DATABASE_FILE=$(shell pwd)/z3js.db GOPATH=$(shell pwd) BLUETOOTH_EMULATION=true dlv -l localhost:2345 --headless debug gateway -- -profile
+
 dns: bin/iot-dns
 	PORT=8053 bin/iot-dns
 

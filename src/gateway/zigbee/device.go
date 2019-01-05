@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"gateway/events"
 	"gateway/net"
+	"log"
 	"strings"
 	"sync"
 	"time"
@@ -57,10 +58,6 @@ func (d *Device) GetManufacturer() string {
 	return d.Manufacturer
 }
 
-func (d *Device) IsValid() bool {
-	return d.Model != "" && d.Manufacturer != ""
-}
-
 func (d *Device) merge(m *DeviceMessage) {
 	// d.mutex.Lock()
 	// defer d.mutex.Unlock()
@@ -81,82 +78,45 @@ func (d *Device) merge(m *DeviceMessage) {
 	}
 	if !ok {
 		d.Endpoints = append(d.Endpoints, m.Endpoint)
-	}
-
-	var fetchManufacturer func()
-	fetchManufacturer = func() {
-		if d.Manufacturer == "" {
-			for _, endpoint := range d.FindEndpointsForCluster(Cluster{ClusterType{}, ClusterID{UInt16{0x0000}}}) {
-				d.gateway.commands <- CommandListMessage{[]Command{
-					Command{"zcl global direction 0", 0},
-					Command{"zcl global read 0x0000 0x0004", 0},
-					Command{fmt.Sprintf("send %s 0x01 %s", d.NodeID, endpoint.Endpoint), 0},
-				}}
-
-				go func(endpoint DeviceEndpoint) {
-					channel := d.Once(fmt.Sprintf("attr:%d:0:4", endpoint.Endpoint))
-
-					e := <-channel.Receive()
-
-					if d.Manufacturer != "" {
-						return
-					} else {
-						d.Manufacturer = e.Args[0].([]interface{})[0].(string)
-
-						if d.IsValid() {
-							d.Emit("merge")
-						}
-					}
-				}(endpoint)
-			}
+		if !d.hasBasicAttributes() && m.Endpoint.Match(Cluster{ClusterType{}, ClusterID{UInt16{0x0000}}}) {
+			d.readBasicAttributes(m.Endpoint.Endpoint)
 		}
 	}
-	go fetchManufacturer()
-
-	var fetchModel func()
-	fetchModel = func() {
-		if d.Model == "" {
-			for _, endpoint := range d.FindEndpointsForCluster(Cluster{ClusterType{}, ClusterID{UInt16{0x0000}}}) {
-				d.gateway.commands <- CommandListMessage{[]Command{
-					Command{"zcl global direction 0", 0},
-					Command{"zcl global read 0x0000 0x0005", 0},
-					Command{fmt.Sprintf("send %s 0x01 %s", d.NodeID, endpoint.Endpoint), 0},
-				}}
-
-				go func(endpoint DeviceEndpoint) {
-					channel := d.Once(fmt.Sprintf("attr:%d:0:5", endpoint.Endpoint))
-
-					e := <-channel.Receive()
-
-					if d.Model != "" {
-						return
-					} else {
-						d.Model = e.Args[0].([]interface{})[0].(string)
-
-						if d.IsValid() {
-							d.Emit("merge")
-						}
-					}
-				}(endpoint)
-			}
-		}
-	}
-	go fetchModel()
-
 }
 
 func (d *Device) V8FuncRead(in v8.FunctionArgs) (*v8.Value, error) {
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
-
-	ep := Endpoint(in.Arg(0).Float64())
+	ep64, _ := in.Arg(0).Float64()
+	endpoint := Endpoint(ep64)
 	clusterId := ClusterID{V8Uint16(in.Arg(1))}
 
-	attributes := make([]uint16, len(in.Args)-2)
+	attributes := make([]AttributeID, len(in.Args)-2)
 	for i, arg := range in.Args[2:] {
-		attributes[i] = V8Uint16(arg).Value
+		attributes[i] = AttributeID{V8Uint16(arg)}
 	}
 
+	channel := d.Read(endpoint, clusterId, attributes...)
+
+	if r, err := in.Context.NewResolver(); err != nil {
+		return nil, err
+	} else {
+		go func() {
+			select {
+			case <-time.After(1 * time.Second):
+				if err := r.Reject(fmt.Errorf("read timeout")); err != nil {
+					log.Println(err)
+				}
+			case e := <-channel.Receive():
+				if err := r.Resolve(e.Args[0]); err != nil {
+					log.Println(err)
+				}
+			}
+			channel.Close()
+		}()
+		return r.Promise()
+	}
+}
+
+func (d *Device) Read(endpoint Endpoint, clusterId ClusterID, attributes ...AttributeID) *events.Channel {
 	list := make([]string, len(attributes))
 	buf := make([]byte, 3+2*len(attributes))
 	buf[0] = 0x00
@@ -164,42 +124,27 @@ func (d *Device) V8FuncRead(in v8.FunctionArgs) (*v8.Value, error) {
 	d.seq++
 
 	for i, attribute := range attributes {
-		binary.LittleEndian.PutUint16(buf[3+i*2:], attribute)
-		list[i] = fmt.Sprintf("%d", attribute)
+		binary.LittleEndian.PutUint16(buf[3+i*2:], attribute.Value)
+		list[i] = fmt.Sprintf("%d", attribute.Value)
 	}
 
-	if r, err := in.Context.NewResolver(); err != nil {
-		return nil, err
-	} else {
-		channel := d.Once(fmt.Sprintf("attr:%d:%d:%s", ep, clusterId.Value, strings.Join(list, ":")))
+	channel := d.Once(fmt.Sprintf("attr:%d:%d:%s", endpoint, clusterId.Value, strings.Join(list, ":")))
 
-		go func() {
-			select {
-			case <-time.After(30 * time.Second):
-				if err := r.Reject(fmt.Errorf("read timeout")); err != nil {
-					panic(err)
-				}
-			case e := <-channel.Receive():
-				if err := r.Resolve(e.Args[0]); err != nil {
-					panic(err)
-				}
-			}
-		}()
+	d.gateway.commands <- CommandListMessage{[]Command{
+		Command{fmt.Sprintf("raw %s %s", clusterId, CommandData(buf).bracketString()), 0},
+		Command{fmt.Sprintf("send %s 0x01 %s", d.NodeID, endpoint), 0},
+	}}
 
-		d.gateway.commands <- CommandListMessage{[]Command{
-			Command{fmt.Sprintf("raw %s %s", clusterId, CommandData(buf).bracketString()), 0},
-			Command{fmt.Sprintf("send %s 0x01 %s", d.NodeID, ep), 0},
-		}}
-
-		return r.Promise(), nil
-	}
+	return channel
 }
 
 func (d *Device) V8FuncSend(in v8.FunctionArgs) (*v8.Value, error) {
 	clusterId := ClusterID{V8Uint16(in.Arg(0))}
 	commandId := CommandID{V8Uint8(in.Arg(1))}
-	ep := Endpoint(in.Arg(2).Float64())
-	data := append([]byte{0x01, 0x00, byte(commandId.Value)}, in.Arg(3).Bytes()...)
+	ep64, _ := in.Arg(2).Float64()
+	ep := Endpoint(ep64)
+	b, _ := in.Arg(3).Bytes()
+	data := append([]byte{0x01, 0x00, byte(commandId.Value)}, b...)
 
 	d.gateway.commands <- CommandListMessage{[]Command{
 		Command{fmt.Sprintf("raw %s %s", clusterId, CommandData(data).bracketString()), 0},
@@ -230,24 +175,25 @@ func (d *Device) FindEndpointsForCluster(cluster Cluster) []DeviceEndpoint {
 }
 
 func (d *Device) Match(query *v8.Value) (bool, error) {
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
+	// d.mutex.Lock()
+	// defer d.mutex.Unlock()
 
 	if vendpoints, err := query.Get("endpoints"); err != nil {
 		return false, err
 	} else if vlength, err := vendpoints.Get("length"); err != nil {
 		return false, err
-	} else if length := int(vlength.Int64()); length > 0 {
-		for i := 0; i < length; i++ {
+	} else if length, err := vlength.Int64(); err != nil && length > 0 {
+		for i := int64(0); i < length; i++ {
 			var endpointId Endpoint
 			var vendpoint *v8.Value
 
-			if vendpoint, err = vendpoints.GetIndex(i); err != nil {
+			if vendpoint, err = vendpoints.GetIndex(int(i)); err != nil {
 				return false, err
 			} else if vendpointId, err := vendpoint.Get("id"); err != nil {
 				return false, err
 			} else {
-				endpointId = Endpoint(vendpointId.Int64())
+				ep64, _ := vendpointId.Int64()
+				endpointId = Endpoint(ep64)
 			}
 
 			if endpoint := d.FindEndpoint(endpointId); endpoint == nil {
@@ -265,4 +211,33 @@ func (d *Device) Match(query *v8.Value) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func (d *Device) hasBasicAttributes() bool {
+	return d.Model != "" && d.Manufacturer != ""
+}
+
+func (d *Device) readBasicAttributes(endpoint Endpoint) {
+	channel := d.Read(endpoint, ClusterID{UInt16{0x0000}}, AttributeID{UInt16{0x0004}}, AttributeID{UInt16{0x0005}})
+	log.Println("readBasicAttributes", endpoint)
+	go func() {
+		select {
+		case <-time.After(4 * time.Second):
+			channel.Close()
+
+			if !d.hasBasicAttributes() {
+				d.readBasicAttributes(endpoint)
+			}
+		case e := <-channel.Receive():
+			log.Println(e)
+			d.Manufacturer = e.Args[0].([]interface{})[0].(string)
+			d.Model = e.Args[0].([]interface{})[1].(string)
+
+			if d.hasBasicAttributes() {
+				d.Emit("merge")
+			} else {
+				d.readBasicAttributes(endpoint)
+			}
+		}
+	}()
 }

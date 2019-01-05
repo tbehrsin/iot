@@ -51,7 +51,7 @@ func (d *DeviceProxy) onSubscribe(context *v8.Context, controller *v8.Value) {
 	}
 
 	if _, err := controller.Call(nil, d.value); err != nil {
-		log.Println(err)
+		//log.Println(err)
 	}
 
 	if d.controller == nil {
@@ -153,9 +153,9 @@ func (d *DeviceProxy) V8FuncMatch(in v8.FunctionArgs) (*v8.Value, error) {
 	if matches, err := d.device.Match(in.Arg(0)); err != nil {
 		return nil, err
 	} else if matches {
-		return in.Context.True(), nil
+		return in.Context.True()
 	} else {
-		return in.Context.False(), nil
+		return in.Context.False()
 	}
 }
 

@@ -82,6 +82,11 @@ func (p *GatewayProxy) onJoinNetwork(d *DeviceProxy) {
 func (p *GatewayProxy) V8FuncSubscribe(in v8.FunctionArgs) (*v8.Value, error) {
 	controller := in.Arg(0)
 	p.controllers.Store(in.Context, controller)
+
+	in.Context.GetIsolate().AddShutdownHook(func(i *v8.Isolate) {
+		p.controllers.Delete(in.Context)
+	})
+
 	p.devices.Range(func(k, v interface{}) bool {
 		d := v.(*DeviceProxy)
 		if d.controller == nil {

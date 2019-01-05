@@ -22,10 +22,8 @@ type Controller struct {
 func NewController(in v8.FunctionArgs) (*Controller, error) {
 	if device, ok := currentDevices[in.Context]; !ok {
 		return nil, fmt.Errorf("not a constructor")
-	} else if app, err := in.Context.Global().Get("app"); err != nil {
-		return nil, err
 	} else {
-		app := app.Receiver(api.ApplicationType).Interface().(api.Application)
+		app := in.Context.GetIsolate().GetData("app").(api.Application)
 		c := &Controller{
 			in.This,
 			in.Context,
@@ -36,7 +34,7 @@ func NewController(in v8.FunctionArgs) (*Controller, error) {
 			fmt.Sprintf("%s %s", device.device.GetManufacturer(), device.device.GetModel()),
 			"/index.html",
 		}
-		// in.Context.GetIsolate().AddShutdownHook(c)
+		in.Context.GetIsolate().AddShutdownHook(c.onShutdownIsolate)
 		return c, nil
 	}
 }
@@ -66,7 +64,7 @@ func (c *Controller) V8GetState(in v8.GetterArgs) (*v8.Value, error) {
 
 func (c *Controller) V8FuncSetState(in v8.FunctionArgs) (*v8.Value, error) {
 	var state map[string]interface{}
-	force := in.Arg(1).Bool()
+	force, _ := in.Arg(1).Bool()
 
 	if buf, err := json.Marshal(in.Arg(0)); err != nil {
 		return nil, err
@@ -81,7 +79,6 @@ func (c *Controller) V8FuncSetState(in v8.FunctionArgs) (*v8.Value, error) {
 
 func (c *Controller) SetState(state map[string]interface{}, force bool) error {
 	c.stateCache = nil
-
 	var out map[string]interface{}
 	if force {
 		for k, v := range state {
@@ -114,7 +111,7 @@ func (c *Controller) Application() api.Application {
 	return c.app
 }
 
-func (c *Controller) ShutdownIsolate(i *v8.Isolate) {
+func (c *Controller) onShutdownIsolate(i *v8.Isolate) {
 	c.state = nil
 	c.value = nil
 	c.context = nil

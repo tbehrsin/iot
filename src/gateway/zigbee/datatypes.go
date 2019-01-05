@@ -88,10 +88,10 @@ var dataTypes = makeDataTypes([]DataType{
 		0x42,
 		func(in []byte) (interface{}, error) {
 			length := int(uint8(in[0]))
-			if length != len(in[1:]) {
+			if length > len(in[1:]) {
 				return nil, fmt.Errorf("invalid string length %d for string \"%s\" of length %d", length, in[1:], len(in[1:]))
 			}
-			return string(in[1:]), nil
+			return string(in[1 : 1+length]), nil
 		},
 		func(in interface{}) ([]byte, error) {
 			s := []byte(fmt.Sprintf("%s", in))
