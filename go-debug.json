@@ -1,0 +1,10 @@
+{
+  "configurations": [
+    {
+      "name": "iot-gateway",
+      "mode": "remote",
+      "host": "localhost",
+      "port": 2345
+    }
+  ]
+}

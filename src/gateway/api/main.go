@@ -34,6 +34,7 @@ type API struct {
 	Registry          *apps.Registry
 	DB                *bolt.DB
 	server            *http.Server
+	conn              *tls.Conn
 	session           net.Listener
 	Mapping           *upnp.Mapping
 	developerMode     *DeveloperMode
@@ -43,6 +44,7 @@ type API struct {
 	mqttClient        mqtt.Client
 	inspectorMessages chan []byte
 	running           bool
+	gateway           *Gateway
 }
 
 func NewAPI() (*API, error) {
@@ -145,6 +147,24 @@ func (api *API) Start() error {
 		// 	}
 		// })
 
+		restart := func() {
+			api.developerMode.Stop()
+
+			if api.conn != nil {
+				api.conn.Close()
+			}
+
+			if api.server != nil {
+				api.server.Close()
+			}
+
+			if api.running {
+				api.running = false
+				time.Sleep(1 * time.Second)
+				api.Start()
+			}
+		}
+
 		config := &tls.Config{
 			MinVersion:               tls.VersionTLS12,
 			CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
@@ -183,35 +203,24 @@ func (api *API) Start() error {
 			clientConfig.BuildNameToCertificate()
 
 			if conn, err := tls.Dial("tcp", "proxy.iot.behrsin.com:443", clientConfig); err != nil {
-				if api.running {
-					api.running = false
-					if api.server != nil {
-						api.server.Close()
-					}
-					time.Sleep(1 * time.Second)
-					api.Start()
-				}
+				log.Println("dial proxy:", err)
+				restart()
 			} else {
+				api.conn = conn
 				address := conn.LocalAddr().(*net.TCPAddr).IP
 				if err := api.SetLocalAddress(address.String()); err != nil {
 					log.Println(err)
 				}
 
 				if session, err := yamux.Server(conn, nil); err != nil {
-					conn.Close()
-					if api.running {
-						api.running = false
-						if api.server != nil {
-							api.server.Close()
-						}
-						time.Sleep(1 * time.Second)
-						api.Start()
-					}
+					log.Println("yamux:", err)
+					restart()
 				} else {
 					//log.Println(api.Server.Serve(&TLSListener{session, config}))
 					//tlsListener := tls.NewListener(session, config)
 					for {
 						if stream, err := session.Accept(); err != nil {
+							log.Println("yamux session:", err)
 							break
 						} else {
 							go func(stream net.Conn) {
@@ -226,14 +235,8 @@ func (api *API) Start() error {
 						}
 					}
 
-					if api.running {
-						api.running = false
-						if api.server != nil {
-							api.server.Close()
-						}
-						time.Sleep(1 * time.Second)
-						api.Start()
-					}
+					log.Println("yamux closed")
+					restart()
 				}
 			}
 		}()

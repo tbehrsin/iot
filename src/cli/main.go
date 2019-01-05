@@ -13,7 +13,7 @@ type CreateTokenResponse struct {
 	Token string `json:"token"`
 }
 
-func main() {
+func Main(command string, args ...string) {
 	var config *Config
 	var err error
 	if config, err = LoadConfig(); err != nil {
@@ -21,6 +21,15 @@ func main() {
 	}
 	defer config.Save()
 
+	switch command {
+	case "login":
+		LoginCommand(config, args)
+	case "serve":
+		ServeCommand(config, args)
+	}
+}
+
+func main() {
 	if len(os.Args) < 2 {
 		fmt.Print(`
 Available commands:
@@ -32,11 +41,6 @@ Available commands:
 
 `)
 	} else {
-		switch os.Args[1] {
-		case "login":
-			LoginCommand(config, os.Args[2:])
-		case "serve":
-			ServeCommand(config, os.Args[2:])
-		}
+		Main(os.Args[1], os.Args[2:]...)
 	}
 }

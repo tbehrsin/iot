@@ -2,6 +2,14 @@
 
 
 [[projects]]
+  branch = "master"
+  digest = "1:bae554956169c2b5f22b2a39053600ce7b78c4b00a48e84d89ca5cf50cc08046"
+  name = "github.com/behrsin/go-refutils"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "b7ccd5996b32c885c8293b1769534db26a0eda15"
+
+[[projects]]
   digest = "1:0f98f59e9a2f4070d66f0c9c39561f68fcd1dc837b22a852d28d0003aebd1b1e"
   name = "github.com/boltdb/bolt"
   packages = ["."]
@@ -163,16 +171,17 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:9652da56be8fe4998e79e36be6b9d30fe4fd4aacb73ecf0d9b3a33228189dc7e"
+  digest = "1:5b7594f7c43cb5fc8f31c3f4a9f6a61ee798dbd5fcb36b70cb3d4780aad4c509"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "b4a75ba826a64a70990f11a225237acd6ef35c9f"
+  revision = "9a3f9b0469bbc6b8802087ae5c0af9f61502de01"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/behrsin/go-refutils",
     "github.com/boltdb/bolt",
     "github.com/dgrijalva/jwt-go",
     "github.com/eclipse/paho.mqtt.golang",

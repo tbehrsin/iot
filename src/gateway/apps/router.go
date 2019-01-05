@@ -56,7 +56,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	response.mutex.Unlock()
 }
 
-func (a *App) injectRouter() error {
+func (a *App) injectRouter(global *v8.Value) error {
 	if jso, err := a.context.Create(func(in v8.FunctionArgs) (*v8.Value, error) {
 		router := &RouterImpl{
 			// app:    a,
@@ -69,7 +69,7 @@ func (a *App) injectRouter() error {
 		}
 	}); err != nil {
 		return err
-	} else if err := a.context.Global().Set("Router", jso); err != nil {
+	} else if err := global.Set("Router", jso); err != nil {
 		return err
 	}
 
@@ -267,7 +267,7 @@ func (a *App) NewResponse(res http.ResponseWriter) (*Response, error) {
 }
 
 func (r *Response) V8FuncStatus(in v8.FunctionArgs) (*v8.Value, error) {
-	status := in.Args[0].Float64()
+	status, _ := in.Args[0].Float64()
 
 	r.res.WriteHeader(int(status))
 

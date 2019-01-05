@@ -15,25 +15,51 @@ type FileServer struct {
 	protocol *api.ClientProtocol
 	write    chan []byte
 	conn     *websocket.Conn
+	errors   chan error
+	Done     chan error
+	closed   bool
 }
 
-func Serve(dir string, conn *websocket.Conn) {
-	p := &api.ClientProtocol{}
-
+func Serve(dir string, conn *websocket.Conn) (fs *FileServer) {
+	errors := make(chan error, 1)
+	done := make(chan error, 1)
 	write := make(chan []byte)
 	read := make(chan []byte)
 
-	fs := &FileServer{
-		p,
-		write,
-		conn,
+	fs = &FileServer{
+		write:  write,
+		conn:   conn,
+		errors: errors,
+		Done:   done,
 	}
 
-	defer conn.Close()
-	defer close(read)
-	defer close(write)
+	p := api.NewClientProtocol(fs, read, write)
+	fs.protocol = p
 
 	go func() {
+		err := <-fs.errors
+		if fs.closed {
+			fs.Done <- nil
+		} else {
+			fs.Done <- err
+		}
+		defer close(fs.Done)
+		defer close(errors)
+		defer conn.Close()
+		defer close(read)
+		defer close(write)
+	}()
+
+	go func() {
+		defer func() {
+			if err := recover(); err != nil {
+				select {
+				case errors <- fmt.Errorf("%s", err):
+				default:
+				}
+			}
+		}()
+
 		for {
 			message, more := <-write
 
@@ -45,22 +71,42 @@ func Serve(dir string, conn *websocket.Conn) {
 		}
 	}()
 
-	p.Run(fs, read, write)
-
-	for {
-		if mt, message, err := conn.ReadMessage(); err != nil {
-			return
-		} else if mt == websocket.BinaryMessage {
-			read <- message
-		} else if mt == websocket.CloseMessage {
-			return
+	go func() {
+		if err := p.Run(); err != nil {
+			select {
+			case errors <- err:
+			default:
+			}
 		}
-	}
+	}()
+
+	go func() {
+		for {
+			if mt, message, err := conn.ReadMessage(); err != nil {
+				select {
+				case errors <- err:
+				default:
+				}
+				break
+			} else if mt == websocket.BinaryMessage {
+				read <- message
+			} else if mt == websocket.CloseMessage {
+				break
+			}
+		}
+	}()
+
+	return fs
 }
 
-func (fs *FileServer) ProtocolError(err error) {
+func (fs *FileServer) Wait() error {
+	err := <-fs.Done
+	return err
+}
+
+func (fs *FileServer) Close() {
+	fs.closed = true
 	fs.conn.Close()
-	fmt.Println("protocol error:", err)
 }
 
 func (fs *FileServer) ReadFile(path string, writer io.Writer) error {
