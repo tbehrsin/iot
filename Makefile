@@ -16,6 +16,7 @@ deps:
 	@mkdir -p src/gateway/vendor/github.com/behrsin
 	@ln -sf $(shell pwd)/../go-v8 src/gateway/vendor/github.com/behrsin/go-v8
 	@src/gateway/vendor/github.com/behrsin/go-v8/install-v8.sh
+	@test -d src/zigbee && (cd src/zigbee; GOPATH=$(shell pwd) dep ensure) || true
 	@test -d src/api && (cd src/api; GOPATH=$(shell pwd) dep ensure && GOPATH=$(shell pwd) go install ./vendor/github.com/golang/protobuf/protoc-gen-go/) || true
 	@test -d src/cli && (cd src/cli; GOPATH=$(shell pwd) dep ensure) || true
 	@test -d src/server && (cd src/server; GOPATH=$(shell pwd) dep ensure) || true

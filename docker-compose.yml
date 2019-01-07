@@ -13,6 +13,7 @@ services:
     ports:
       - 127.0.0.1:1883:1883
       - 127.0.0.1:9001:9001
+    restart: always
   datastore:
     image: singularities/datastore-emulator
     environment:
@@ -22,3 +23,4 @@ services:
       - datastore:/opt/data
     ports:
       - 127.0.0.1:8081:8081
+    restart: always

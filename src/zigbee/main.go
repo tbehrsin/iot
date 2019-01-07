@@ -17,12 +17,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	gateway := &Gateway{gateway: zigbee.NewGateway()}
+	gateway := &Gateway{gateway: zigbee.NewGateway(nil)}
 	gateway.gateway.SetEUI64(zigbee.EUI64(eui64))
 	gateway.gateway.SetInterface(gateway)
 
 	gateway.gateway.Start(nil)
 	go gateway.Start()
+
+	repl := NewREPL(gateway)
+	repl.Run()
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)

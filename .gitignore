@@ -66,4 +66,4 @@ buck-out/
 # Bundle artifact
 *.jsbundle
 
-z3js.db
+*.db
