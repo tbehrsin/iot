@@ -33,6 +33,7 @@ node {
     currentBuild.result = "FAILED"
 
     githubNotify(status: 'ERROR')
+    
   } finally {
     // Success or failure, always send notifications
     notifyBuild(currentBuild.result)
