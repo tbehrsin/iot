@@ -1,4 +1,8 @@
 node {
+  agent {
+    docker 'golang:1.11-stretch'
+  }
+
   try {
     notifyBuild('STARTED')
     githubNotify(status: 'PENDING')
@@ -7,23 +11,23 @@ node {
       withEnv(["GOPATH=${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}"]) {
         env.PATH="${GOPATH}/bin:$PATH"
 
-        stage('Checkout'){
+        stage('Checkout') {
           echo 'Checking out SCM'
           checkout scm
         }
 
-        stage('Pre Test'){
+        stage('Pre Test') {
           echo 'Pulling Dependencies'
 
           sh 'go version'
           sh 'make deps'
         }
 
-        stage('Test'){
+        stage('Test') {
           sh 'make test'
         }
 
-        stage('Build'){
+        stage('Build') {
           sh 'make'
         }
       }
@@ -33,7 +37,7 @@ node {
     currentBuild.result = "FAILED"
 
     githubNotify(status: 'ERROR')
-    
+
   } finally {
     // Success or failure, always send notifications
     notifyBuild(currentBuild.result)
