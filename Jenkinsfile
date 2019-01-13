@@ -1,4 +1,4 @@
-node {
+pipeline {
   agent {
     docker 'golang:1.11-stretch'
   }
