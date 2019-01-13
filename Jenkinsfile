@@ -32,7 +32,7 @@ node {
     // If there was an exception thrown, the build failed
     currentBuild.result = "FAILED"
 
-    githubNotify(status: 'ERROR', description: e)
+    githubNotify(status: 'ERROR')
   } finally {
     // Success or failure, always send notifications
     notifyBuild(currentBuild.result)
