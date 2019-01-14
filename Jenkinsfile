@@ -4,7 +4,7 @@ node {
   try {
     githubNotify(status: 'PENDING')
 
-    docker.image('golang:1.11-stretch').inside() {
+    docker.image('golang:1.11-stretch').inside('-u root') {
       stage('checkout') {
         dir('iot-backend') {
           checkout scm
@@ -59,6 +59,6 @@ def notifyBuild(String buildStatus = 'STARTED') {
   } else {
     colorCode = '#cc2626'
   }
-  
+
   slackSend(color: colorCode, message: summary)
 }
