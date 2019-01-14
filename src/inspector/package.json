@@ -2,16 +2,20 @@
   "name": "@z3js/inspector",
   "version": "1.0.0",
   "description": "z3js debug inspector",
-  "main": "index.js",
+  "main": "src/electron/index.js",
   "repository": "git@github.com:behrsin/z3js-inspector",
   "author": "Tim Behrsin <tim@behrsin.com>",
   "license": "MIT",
   "private": true,
-  "main": "src/electron/index.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "test": "jest"
   },
   "dependencies": {
     "electron": "^4.0.0-nightly.20181010"
+  },
+  "devDependencies": {
+    "babel-jest": "^24.0.0-alpha.12",
+    "jest": "^24.0.0-alpha.12"
   }
 }

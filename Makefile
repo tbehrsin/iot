@@ -12,12 +12,15 @@ clean:
 	rm -f bin/*
 
 deps:
-	go get -u github.com/golang/dep/cmd/dep
-	go get -u github.com/cespare/reflex
+	GOPATH=$(SYSGOPATH) go get -u github.com/golang/dep/cmd/dep
+	GOPATH=$(SYSGOPATH) go get -u github.com/cespare/reflex
 	cd src/gateway; GOPATH=$(shell pwd) dep ensure
 	mkdir -p src/gateway/vendor/github.com/behrsin
 	ln -sf $(shell pwd)/../go-v8 src/gateway/vendor/github.com/behrsin/go-v8
 	bash -ex src/gateway/vendor/github.com/behrsin/go-v8/install-v8.sh
+	test -f package.json && yarn
+	test -f src/dashboard/package.json && cd src/dashboard && yarn
+	test -f src/inspector/package.json && cd src/inspector && yarn
 	test -d src/api && (cd src/api; GOPATH=$(shell pwd) dep ensure && GOPATH=$(shell pwd) go install ./vendor/github.com/golang/protobuf/protoc-gen-go/) || true
 	test -d src/cli && (cd src/cli; GOPATH=$(shell pwd) dep ensure) || true
 	test -d src/server && (cd src/server; GOPATH=$(shell pwd) dep ensure) || true
@@ -25,6 +28,7 @@ deps:
 	test -d src/db && (cd src/db; GOPATH=$(shell pwd) dep ensure) || true
 
 PATH := $(shell pwd)/bin:$(PATH)
+export SYSGOPATH := $(GOPATH)
 export GOPATH := $(shell pwd)
 
 src/api/protocol/%.pb.go: src/api/protocol/%.proto
@@ -47,6 +51,9 @@ bin/iot-zigbee: $(shell test -d src/zigbee && find src/gateway src/zigbee -name 
 
 test:
 	go test gateway
+	yarn test
+	cd src/dashboard; yarn test
+	cd src/inspector; yarn test
 	go test api
 	go test cli
 	go test server
