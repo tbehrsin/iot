@@ -3,45 +3,63 @@
 
 all: \
 	bin/iot-gateway \
+	bin/iot \
 	bin/iot-server \
-	bin/iot-dns
+	bin/iot-dns \
+	bin/iot-zigbee
 
 clean:
 	rm -f bin/*
 
 deps:
-	@go get -u github.com/golang/dep/cmd/dep
-	@go get -u github.com/cespare/reflex
-	@cd src/gateway; GOPATH=$(shell pwd) dep ensure
-	@mkdir -p src/gateway/vendor/github.com/behrsin
-	@ln -sf $(shell pwd)/../go-v8 src/gateway/vendor/github.com/behrsin/go-v8
-	@src/gateway/vendor/github.com/behrsin/go-v8/install-v8.sh
-	@test -d src/zigbee && (cd src/zigbee; GOPATH=$(shell pwd) dep ensure) || true
-	@test -d src/api && (cd src/api; GOPATH=$(shell pwd) dep ensure && GOPATH=$(shell pwd) go install ./vendor/github.com/golang/protobuf/protoc-gen-go/) || true
-	@test -d src/cli && (cd src/cli; GOPATH=$(shell pwd) dep ensure) || true
-	@test -d src/server && (cd src/server; GOPATH=$(shell pwd) dep ensure) || true
-	@test -d src/dns && (cd src/dns; GOPATH=$(shell pwd) dep ensure) || true
-	@test -d src/db && (cd src/db; GOPATH=$(shell pwd) dep ensure) || true
+	GOPATH=$(SYSGOPATH) go get -u github.com/golang/dep/cmd/dep
+	GOPATH=$(SYSGOPATH) go get -u github.com/cespare/reflex
+	cd src/gateway; GOPATH=$(shell pwd) dep ensure
+	mkdir -p src/gateway/vendor/github.com/behrsin
+	ln -sf $(shell pwd)/../go-v8 src/gateway/vendor/github.com/behrsin/go-v8
+	bash -ex src/gateway/vendor/github.com/behrsin/go-v8/install-v8.sh
+	test -f package.json && yarn
+	test -f src/dashboard/package.json && cd src/dashboard && yarn
+	test -f src/inspector/package.json && cd src/inspector && yarn
+	test -d src/api && (cd src/api; GOPATH=$(shell pwd) dep ensure && GOPATH=$(shell pwd) go install ./vendor/github.com/golang/protobuf/protoc-gen-go/) || true
+	test -d src/cli && (cd src/cli; GOPATH=$(shell pwd) dep ensure) || true
+	test -d src/server && (cd src/server; GOPATH=$(shell pwd) dep ensure) || true
+	test -d src/dns && (cd src/dns; GOPATH=$(shell pwd) dep ensure) || true
+	test -d src/db && (cd src/db; GOPATH=$(shell pwd) dep ensure) || true
+	test -d src/zigbee && (cd src/zigbee; GOPATH=$(shell pwd) dep ensure) || true
 
 PATH := $(shell pwd)/bin:$(PATH)
+export SYSGOPATH := $(GOPATH)
+export GOPATH := $(shell pwd)
 
 src/api/protocol/%.pb.go: src/api/protocol/%.proto
 	protoc --go_out=source_relative:. $<
 
 bin/iot-gateway: $(patsubst %.proto, %.pb.go, $(shell test -d src/gateway && find src/gateway src/api ../go-v8 -name "*.go" -or -name "*.proto" -or -name "*.cc" -or -name "*.h"))
-	GOPATH=$(shell pwd) go build -o bin/iot-gateway gateway
+	go build -o bin/iot-gateway gateway
 
 bin/iot: $(patsubst %.proto, %.pb.go, $(shell test -d src/cli && find src/cli src/api -name "*.go" -or -name "*.proto" -or -name "*.cc" -or -name "*.h"))
-	GOPATH=$(shell pwd) go build -o bin/iot cli
+	go build -o bin/iot cli
 
 bin/iot-server: $(shell test -d src/server && find src/server src/db -name "*.go" ! -path "src/server/vendor/*")
-	GOPATH=$(shell pwd) go build -o bin/iot-server server
+	go build -o bin/iot-server server
 
 bin/iot-dns: $(shell test -d src/dns && find src/dns src/db -name "*.go" ! -path "src/dns/vendor/*")
-	GOPATH=$(shell pwd) go build -o bin/iot-dns dns
+	go build -o bin/iot-dns dns
 
 bin/iot-zigbee: $(shell test -d src/zigbee && find src/gateway src/zigbee -name "*.go")
-	GOPATH=$(shell pwd) go build -o bin/iot-zigbee zigbee
+	go build -o bin/iot-zigbee zigbee
+
+test:
+	go test gateway
+	yarn test
+	cd src/dashboard; yarn test
+	cd src/inspector; yarn test
+	go test api
+	go test cli
+	go test server
+	go test dns
+	go test zigbee
 
 zigbee: bin/iot-zigbee
 	bin/iot-zigbee
@@ -90,6 +108,10 @@ push-iot-server:
 	# cat src/turn/iot-turn.rules.sh | ssh iot-ns2.behrsin.com "sudo cp /dev/stdin /usr/sbin/iot-turn.rules.sh && sudo chmod +x /usr/sbin/iot-turn.rules.sh"
 	cat src/server/iot-server.service | ssh iot-ns2.behrsin.com "sudo cp /dev/stdin /etc/systemd/system/iot-server.service && sudo systemctl enable iot-server && sudo systemctl restart iot-server"
 	cat src/server/iot-server.service | ssh iot-ns1.behrsin.com "sudo cp /dev/stdin /etc/systemd/system/iot-server.service && sudo systemctl enable iot-server && sudo systemctl restart iot-server && journalctl -xfu iot-server"
+
+push-docker-go-node:
+	docker build -t behrsin/go-node - <Dockerfile.jenkins
+	docker push behrsin/go-node
 
 debian:
 	cd debian; docker-compose -p iot up --build --force-recreate
