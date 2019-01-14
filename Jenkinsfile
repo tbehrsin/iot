@@ -8,30 +8,24 @@ try {
     }
 
     stages {
-      ws("${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}/") {
-        withEnv(["GOPATH=${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}"]) {
-          env.PATH="${GOPATH}/bin:$PATH"
+      stage('Checkout') {
+        echo 'Checking out SCM'
+        checkout scm
+      }
 
-          stage('Checkout') {
-            echo 'Checking out SCM'
-            checkout scm
-          }
+      stage('Pre Test') {
+        echo 'Pulling Dependencies'
 
-          stage('Pre Test') {
-            echo 'Pulling Dependencies'
+        sh 'go version'
+        sh 'make deps'
+      }
 
-            sh 'go version'
-            sh 'make deps'
-          }
+      stage('Test') {
+        sh 'make test'
+      }
 
-          stage('Test') {
-            sh 'make test'
-          }
-
-          stage('Build') {
-            sh 'make'
-          }
-        }
+      stage('Build') {
+        sh 'make'
       }
     }
   }
