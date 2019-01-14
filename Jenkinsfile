@@ -1,45 +1,49 @@
-try {
-  notifyBuild('STARTED')
-  githubNotify(status: 'PENDING')
+node {
+  docker 'golang:1.11-stretch'
 
-  pipeline {
-    docker 'golang:1.11-stretch'
+  try {
+    notifyBuild('STARTED')
+    githubNotify(status: 'PENDING')
 
-    stages {
-      stage('Checkout') {
-        echo 'Checking out SCM'
-        checkout scm
-      }
+    ws("${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}/") {
+      withEnv(["GOPATH=${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}"]) {
+        env.PATH="${GOPATH}/bin:$PATH"
 
-      stage('Pre Test') {
-        echo 'Pulling Dependencies'
+        stage('Checkout') {
+          echo 'Checking out SCM'
+          checkout scm
+        }
 
-        sh 'go version'
-        sh 'make deps'
-      }
+        stage('Pre Test') {
+          echo 'Pulling Dependencies'
 
-      stage('Test') {
-        sh 'make test'
-      }
+          sh 'go version'
+          sh 'make deps'
+        }
 
-      stage('Build') {
-        sh 'make'
+        stage('Test') {
+          sh 'make test'
+        }
+
+        stage('Build') {
+          sh 'make'
+        }
       }
     }
-  }
-} catch (e) {
-  // If there was an exception thrown, the build failed
-  currentBuild.result = "FAILED"
+  } catch (e) {
+    // If there was an exception thrown, the build failed
+    currentBuild.result = "FAILED"
 
-  githubNotify(status: 'ERROR')
+    githubNotify(status: 'ERROR')
 
-} finally {
-  // Success or failure, always send notifications
-  notifyBuild(currentBuild.result)
+  } finally {
+    // Success or failure, always send notifications
+    notifyBuild(currentBuild.result)
 
-  def bs = currentBuild.result ?: 'SUCCESSFUL'
-  if(bs == 'SUCCESSFUL'){
-    githubNotify(status: 'SUCCESS')
+    def bs = currentBuild.result ?: 'SUCCESSFUL'
+    if(bs == 'SUCCESSFUL'){
+      githubNotify(status: 'SUCCESS')
+    }
   }
 }
 
