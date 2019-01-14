@@ -1,13 +1,13 @@
-pipeline {
-  agent {
-    docker 'golang:1.11-stretch'
-  }
+try {
+  notifyBuild('STARTED')
+  githubNotify(status: 'PENDING')
 
-  stages {
-    try {
-      notifyBuild('STARTED')
-      githubNotify(status: 'PENDING')
+  pipeline {
+    agent {
+      docker 'golang:1.11-stretch'
+    }
 
+    stages {
       ws("${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}/") {
         withEnv(["GOPATH=${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}"]) {
           env.PATH="${GOPATH}/bin:$PATH"
@@ -33,21 +33,21 @@ pipeline {
           }
         }
       }
-    } catch (e) {
-      // If there was an exception thrown, the build failed
-      currentBuild.result = "FAILED"
-
-      githubNotify(status: 'ERROR')
-
-    } finally {
-      // Success or failure, always send notifications
-      notifyBuild(currentBuild.result)
-
-      def bs = currentBuild.result ?: 'SUCCESSFUL'
-      if(bs == 'SUCCESSFUL'){
-        githubNotify(status: 'SUCCESS')
-      }
     }
+  }
+} catch (e) {
+  // If there was an exception thrown, the build failed
+  currentBuild.result = "FAILED"
+
+  githubNotify(status: 'ERROR')
+
+} finally {
+  // Success or failure, always send notifications
+  notifyBuild(currentBuild.result)
+
+  def bs = currentBuild.result ?: 'SUCCESSFUL'
+  if(bs == 'SUCCESSFUL'){
+    githubNotify(status: 'SUCCESS')
   }
 }
 
