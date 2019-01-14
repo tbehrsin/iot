@@ -5,9 +5,7 @@ node {
     githubNotify(status: 'PENDING')
 
     docker.image('golang:1.11-stretch').inside() {
-      stage('Checkout') {
-        echo 'Checking out SCM'
-
+      stage('checkout') {
         dir('iot-backend') {
           checkout scm
         }
@@ -18,50 +16,42 @@ node {
       }
 
       dir('iot-backend') {
-        stage('Pre Test') {
-          echo 'Pulling Dependencies'
-
+        stage('deps') {
+          sh 'apt-get update'
+          sh 'apt-get -y install protobuf-compiler'
           sh 'go version'
           sh 'make deps'
         }
 
-        stage('Build') {
+        stage('build') {
           sh 'make'
         }
 
-        stage('Test') {
+        stage('test') {
           sh 'make test'
         }
       }
     }
   } catch (e) {
-    // If there was an exception thrown, the build failed
     currentBuild.result = "FAILED"
-
     githubNotify(status: 'ERROR')
-
   } finally {
-    // Success or failure, always send notifications
     notifyBuild(currentBuild.result)
 
-    def bs = currentBuild.result ?: 'SUCCESSFUL'
-    if(bs == 'SUCCESSFUL'){
+    def status = currentBuild.result ?: 'SUCCESSFUL'
+    if(status == 'SUCCESSFUL'){
       githubNotify(status: 'SUCCESS')
     }
   }
 }
 
 def notifyBuild(String buildStatus = 'STARTED') {
-  // build status of null means successful
   buildStatus =  buildStatus ?: 'SUCCESSFUL'
 
-  // Default values
-  def colorName = 'RED'
-  def colorCode = '#FF0000'
+  def colorCode = '#cc2626'
   def subject = "${buildStatus}: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'"
   def summary = "${subject} <${env.BUILD_URL}|Job URL> - <${env.BUILD_URL}/console|Console Output>"
 
-  // Override default values based on build status
   if (buildStatus == 'STARTED') {
     colorCode = '#ff9900'
   } else if (buildStatus == 'SUCCESSFUL') {
@@ -69,7 +59,6 @@ def notifyBuild(String buildStatus = 'STARTED') {
   } else {
     colorCode = '#cc2626'
   }
-
-  // Send notifications
+  
   slackSend(color: colorCode, message: summary)
 }
