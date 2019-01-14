@@ -14,7 +14,7 @@ deps:
 	@go get -u github.com/cespare/reflex
 	@cd src/gateway; GOPATH=$(shell pwd) dep ensure
 	@mkdir -p src/gateway/vendor/github.com/behrsin
-	@ln -sf $(shell pwd)/../go-v8 src/gateway/vendor/github.com/behrsin/go-v8
+	@test -d ../go-v8 && ln -sf $(shell pwd)/../go-v8 src/gateway/vendor/github.com/behrsin/go-v8 || dep ensure -add github.com/behrsin/go-v8
 	@src/gateway/vendor/github.com/behrsin/go-v8/install-v8.sh
 	@test -d src/api && (cd src/api; GOPATH=$(shell pwd) dep ensure && GOPATH=$(shell pwd) go install ./vendor/github.com/golang/protobuf/protoc-gen-go/) || true
 	@test -d src/cli && (cd src/cli; GOPATH=$(shell pwd) dep ensure) || true
