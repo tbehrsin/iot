@@ -16,19 +16,21 @@ node {
         }
       }
 
-      stage('Pre Test') {
-        echo 'Pulling Dependencies'
+      dir('iot-backend') {
+        stage('Pre Test') {
+          echo 'Pulling Dependencies'
 
-        sh 'go version'
-        sh 'make deps'
-      }
+          sh 'go version'
+          sh 'make deps'
+        }
 
-      stage('Test') {
-        sh 'make test'
-      }
+        stage('Test') {
+          sh 'make test'
+        }
 
-      stage('Build') {
-        sh 'make'
+        stage('Build') {
+          sh 'make'
+        }
       }
     }
   } catch (e) {
