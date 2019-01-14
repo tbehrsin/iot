@@ -12,7 +12,7 @@ node {
         }
 
         dir('go-v8') {
-          git branch: 'master', url: 'git@github.com:behrsin/go-v8.git'
+          git branch: 'master', url: 'https://github.com/behrsin/go-v8.git'
         }
       }
 
