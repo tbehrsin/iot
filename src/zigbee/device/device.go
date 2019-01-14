@@ -6,7 +6,6 @@ import (
 	"gateway/zigbee"
 	"math/rand"
 	"time"
-	"zigbee/device"
 
 	"github.com/boltdb/bolt"
 )
@@ -126,23 +125,16 @@ func (d *Device) advertise() error {
 //  Device Status change is taking its cue from NewDevice
 // as far as publishing a status change message goes
 // DB functionality (if any) probably wants to be closer to Update, tho
-func (d *Device) DevceStatusChange() (*Device, error) {
+func (d *Device) DeviceStateChange() error {
 	var err error
 	err = nil
 	gw := d.table.gateway
 	// db := d.table.db
 	// id := fmt.Sprintf("%s", d.NodeID)
 	// d.table.devices.StateChange(id)?
-	err = gw.Publish(zigbee.DeviceStateChange, &zigbee.DeviceStateChangeMessage{
+	return gw.Publish(zigbee.DeviceStateChange, &zigbee.DeviceStateChangeMessage{
 		EUI64: d.Endpoint.EUI64, State: d.State,
 	})
-	if err != nil {
-		return d, err
-	} else {
-		// charge on with any db changes
-		// return ok for now
-		return d, nil
-	}
 
 }
 
@@ -158,18 +150,22 @@ func (d *Device) DevceStatusChange() (*Device, error) {
 // so it probably needs to be assembled from each device
 // found by the loop
 
-func (d *Device) DeviceList(r *REPL) error {
+//This thing isn't playing here at all
+//May be better to include it with the device list command
+//
 
-	table := r.Gateway.GetDeviceTable()
-	var localdevices []DeviceMessage
-	table.Range(func(d *device.Device) bool {
-		// append nodeid to devices, instead of printing
-		localdevices[d] = d.NodeID
-	})
+//func (d *Device) DeviceList(r *REPL) error {
 
-	gw := d.table.gateway
+//	table := r.Gateway.GetDeviceTable()
+//	var localdevices []DeviceMessage
+// table.Range(func(d *device.Device) bool {
+// append nodeid to devices, instead of printing
+// localdevices[d] = d.NodeID
+//	})
 
-	return gw.Publish(zigbee.DeviceList, &zigbee.DeviceListMessage{
-		Devices: localdevices,
-	})
-}
+//	gw := d.table.gateway
+
+//	return gw.Publish(zigbee.DeviceList, &zigbee.DeviceListMessage{
+//		Devices: localdevices,
+//	})
+//}
