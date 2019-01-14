@@ -1,6 +1,7 @@
+notifyBuild('STARTED')
+
 node {
   try {
-    notifyBuild('STARTED')
     githubNotify(status: 'PENDING')
 
     docker.image('golang:1.11-stretch').inside() {
@@ -24,12 +25,12 @@ node {
           sh 'make deps'
         }
 
-        stage('Test') {
-          sh 'make test'
-        }
-
         stage('Build') {
           sh 'make'
+        }
+
+        stage('Test') {
+          sh 'make test'
         }
       }
     }
@@ -62,14 +63,11 @@ def notifyBuild(String buildStatus = 'STARTED') {
 
   // Override default values based on build status
   if (buildStatus == 'STARTED') {
-    color = 'YELLOW'
-    colorCode = '#FFFF00'
+    colorCode = '#ff9900'
   } else if (buildStatus == 'SUCCESSFUL') {
-    color = 'GREEN'
-    colorCode = '#00FF00'
+    colorCode = '#1ec41e'
   } else {
-    color = 'RED'
-    colorCode = '#FF0000'
+    colorCode = '#cc2626'
   }
 
   // Send notifications
