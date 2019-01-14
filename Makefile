@@ -3,8 +3,10 @@
 
 all: \
 	bin/iot-gateway \
+	bin/iot \
 	bin/iot-server \
-	bin/iot-dns
+	bin/iot-dns \
+	bin/iot-zigbee
 
 clean:
 	rm -f bin/*
@@ -23,24 +25,33 @@ deps:
 	test -d src/db && (cd src/db; GOPATH=$(shell pwd) dep ensure) || true
 
 PATH := $(shell pwd)/bin:$(PATH)
+export GOPATH := $(shell pwd)
 
 src/api/protocol/%.pb.go: src/api/protocol/%.proto
 	protoc --go_out=source_relative:. $<
 
 bin/iot-gateway: $(patsubst %.proto, %.pb.go, $(shell test -d src/gateway && find src/gateway src/api ../go-v8 -name "*.go" -or -name "*.proto" -or -name "*.cc" -or -name "*.h"))
-	GOPATH=$(shell pwd) go build -o bin/iot-gateway gateway
+	go build -o bin/iot-gateway gateway
 
 bin/iot: $(patsubst %.proto, %.pb.go, $(shell test -d src/cli && find src/cli src/api -name "*.go" -or -name "*.proto" -or -name "*.cc" -or -name "*.h"))
-	GOPATH=$(shell pwd) go build -o bin/iot cli
+	go build -o bin/iot cli
 
 bin/iot-server: $(shell test -d src/server && find src/server src/db -name "*.go" ! -path "src/server/vendor/*")
-	GOPATH=$(shell pwd) go build -o bin/iot-server server
+	go build -o bin/iot-server server
 
 bin/iot-dns: $(shell test -d src/dns && find src/dns src/db -name "*.go" ! -path "src/dns/vendor/*")
-	GOPATH=$(shell pwd) go build -o bin/iot-dns dns
+	go build -o bin/iot-dns dns
 
 bin/iot-zigbee: $(shell test -d src/zigbee && find src/gateway src/zigbee -name "*.go")
-	GOPATH=$(shell pwd) go build -o bin/iot-zigbee zigbee
+	go build -o bin/iot-zigbee zigbee
+
+test:
+	go test gateway
+	go test api
+	go test cli
+	go test server
+	go test dns
+	go test zigbee
 
 zigbee: bin/iot-zigbee
 	bin/iot-zigbee
