@@ -7,6 +7,7 @@ node {
       stage('Checkout') {
         echo 'Checking out SCM'
         checkout scm
+        sh 'cd ..; git clone git@github.com:behrsin/go-v8.git'
       }
 
       stage('Pre Test') {
