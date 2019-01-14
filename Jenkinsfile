@@ -4,7 +4,7 @@ node {
   try {
     githubNotify(status: 'PENDING')
 
-    docker.image('golang:1.11-stretch').inside('-u root') {
+    docker.image('behrsin/go-node').inside('-u root') {
       stage('checkout') {
         dir('iot-backend') {
           checkout scm

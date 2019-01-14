@@ -108,6 +108,10 @@ push-iot-server:
 	cat src/server/iot-server.service | ssh iot-ns2.behrsin.com "sudo cp /dev/stdin /etc/systemd/system/iot-server.service && sudo systemctl enable iot-server && sudo systemctl restart iot-server"
 	cat src/server/iot-server.service | ssh iot-ns1.behrsin.com "sudo cp /dev/stdin /etc/systemd/system/iot-server.service && sudo systemctl enable iot-server && sudo systemctl restart iot-server && journalctl -xfu iot-server"
 
+push-docker-go-node:
+	docker build -t behrsin/go-node - <Dockerfile.jenkins
+	docker push behrsin/go-node
+
 debian:
 	cd debian; docker-compose -p iot up --build --force-recreate
 
