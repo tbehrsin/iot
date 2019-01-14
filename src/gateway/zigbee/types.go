@@ -63,6 +63,14 @@ type UInt16 struct {
 	Value uint16
 }
 
+func NewUInt16(s string) (UInt16, error) {
+	if v, err := strconv.ParseUint(strings.TrimPrefix(s, "0x"), 16, 16); err != nil {
+		return UInt16{0}, err
+	} else {
+		return UInt16{uint16(v)}, nil
+	}
+}
+
 func (n UInt16) String() string {
 	return fmt.Sprintf("0x%04X", n.Value)
 }
@@ -97,6 +105,14 @@ func V8Uint16(v *v8.Value) UInt16 {
 
 type UInt8 struct {
 	Value uint8
+}
+
+func NewUInt8(s string) (UInt8, error) {
+	if v, err := strconv.ParseUint(strings.TrimPrefix(s, "0x"), 16, 8); err != nil {
+		return UInt8{0}, err
+	} else {
+		return UInt8{uint8(v)}, nil
+	}
 }
 
 func (n UInt8) String() string {

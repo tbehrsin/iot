@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"strings"
 	"sync"
+	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
@@ -62,7 +63,33 @@ type Gateway struct {
 	mutex    *sync.Mutex
 }
 
+func MQTTConnect(client mqtt.Client) {
+	retry := time.NewTicker(5 * time.Second)
+RetryLoop:
+	for {
+		select {
+		case <-retry.C:
+			if token := client.Connect(); token.Wait() && token.Error() != nil {
+
+			} else {
+				retry.Stop()
+				break RetryLoop
+			}
+		}
+	}
+}
+
 func NewGateway(client mqtt.Client) *Gateway {
+	if client == nil {
+		opts := mqtt.NewClientOptions()
+		opts.AddBroker("tcp://localhost:1883")
+		opts.SetAutoReconnect(true)
+		opts.SetClientID("zigbee-gateway")
+
+		client = mqtt.NewClient(opts)
+		MQTTConnect(client)
+	}
+
 	gw := &Gateway{
 		devices:  &sync.Map{},
 		commands: make(chan CommandListMessage),

@@ -4,12 +4,14 @@ import (
 	"gateway/net"
 	"gateway/zigbee"
 	"time"
+	"zigbee/device"
 )
 
 type Gateway struct {
 	gateway   *zigbee.Gateway
 	running   bool
 	networkUp bool
+	devices   *device.Table
 }
 
 func (gw *Gateway) Start() {
@@ -25,6 +27,16 @@ func (gw *Gateway) Start() {
 
 func (gw *Gateway) Stop() {
 	gw.running = false
+}
+
+func (gw *Gateway) GetDeviceTable() *device.Table {
+	if gw.devices == nil {
+		var err error
+		if gw.devices, err = device.LoadTable("zigbee-gateway.db"); err != nil {
+			panic(err)
+		}
+	}
+	return gw.devices
 }
 
 func (gw *Gateway) OnHeartbeat(eui64 zigbee.EUI64, message zigbee.HeartbeatMessage)                 {}
