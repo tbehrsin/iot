@@ -14,7 +14,12 @@
     "start:watchman": "node node_modules/react-native/local-cli/cli.js start",
     "inspector": "cd src/inspector; npm run -s start",
     "test": "jest",
-    "postinstall": "cd ios; pod install"
+    "postinstall": "cross-os postinstall"
+  },
+  "cross-os": {
+    "postinstall": {
+      "darwin": "cd ios; pod install"
+    }
   },
   "dependencies": {
     "buffer": "^5.2.1",
@@ -42,13 +47,18 @@
   },
   "devDependencies": {
     "babel-jest": "23.6.0",
+    "babel-preset-react-native": "^4.0.0",
+    "cross-os": "^1.3.0",
     "jest": "23.6.0",
-    "metro-react-native-babel-preset": "0.48.1",
     "npm-run-all": "^4.1.3",
     "react-test-renderer": "16.6.0-alpha.8af6728"
   },
   "jest": {
-    "preset": "react-native"
+    "preset": "react-native",
+    "roots": [
+      "<rootDir>/node_modules/react-native",
+      "<rootDir>/src/client"
+    ]
   },
   "rnpm": {
     "assets": [

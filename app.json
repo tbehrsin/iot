@@ -1,6 +1,6 @@
 {
-  "name": "z3js",
-  "displayName": "z3js",
+  "name": "iot-client",
+  "displayName": "Behrsin IoT",
   "constants": {
     "url": "https://iot.behrsin.com",
     "backgroundColor": "#f5f8fa",
