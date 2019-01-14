@@ -6,8 +6,14 @@ node {
     docker.image('golang:1.11-stretch').inside() {
       stage('Checkout') {
         echo 'Checking out SCM'
-        checkout scm
-        sh 'cd ..; git clone git@github.com:behrsin/go-v8.git'
+
+        dir('iot-backend') {
+          checkout scm
+        }
+
+        dir('go-v8') {
+          git branch: 'master', url: 'git@github.com:behrsin/go-v8.git'
+        }
       }
 
       stage('Pre Test') {
