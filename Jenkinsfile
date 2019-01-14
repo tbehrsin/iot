@@ -3,9 +3,7 @@ try {
   githubNotify(status: 'PENDING')
 
   pipeline {
-    agent {
-      docker 'golang:1.11-stretch'
-    }
+    docker 'golang:1.11-stretch'
 
     stages {
       stage('Checkout') {
