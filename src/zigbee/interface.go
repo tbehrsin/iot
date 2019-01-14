@@ -32,7 +32,7 @@ func (gw *Gateway) Stop() {
 func (gw *Gateway) GetDeviceTable() *device.Table {
 	if gw.devices == nil {
 		var err error
-		if gw.devices, err = device.LoadTable("zigbee-gateway.db"); err != nil {
+		if gw.devices, err = device.LoadTable("zigbee-gateway.db", gw.gateway); err != nil {
 			panic(err)
 		}
 	}

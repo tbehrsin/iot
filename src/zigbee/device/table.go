@@ -12,9 +12,10 @@ import (
 type Table struct {
 	devices sync.Map
 	db      *bolt.DB
+	gateway *zigbee.Gateway
 }
 
-func LoadTable(path string) (*Table, error) {
+func LoadTable(path string, gateway *zigbee.Gateway) (*Table, error) {
 	if db, err := bolt.Open(path, 0600, nil); err != nil {
 		return nil, err
 	} else {
@@ -28,7 +29,8 @@ func LoadTable(path string) (*Table, error) {
 		}
 
 		table := &Table{
-			db: db,
+			db:      db,
+			gateway: gateway,
 		}
 
 		if err := db.View(func(tx *bolt.Tx) error {
