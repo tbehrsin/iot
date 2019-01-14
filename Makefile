@@ -26,7 +26,7 @@ deps:
 	test -d src/server && (cd src/server; GOPATH=$(shell pwd) dep ensure) || true
 	test -d src/dns && (cd src/dns; GOPATH=$(shell pwd) dep ensure) || true
 	test -d src/db && (cd src/db; GOPATH=$(shell pwd) dep ensure) || true
-  test -d src/zigbee && (cd src/zigbee; GOPATH=$(shell pwd) dep ensure) || true
+	test -d src/zigbee && (cd src/zigbee; GOPATH=$(shell pwd) dep ensure) || true
 
 PATH := $(shell pwd)/bin:$(PATH)
 export SYSGOPATH := $(GOPATH)
