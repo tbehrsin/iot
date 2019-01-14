@@ -1,33 +1,27 @@
 node {
-  docker 'golang:1.11-stretch'
-
   try {
     notifyBuild('STARTED')
     githubNotify(status: 'PENDING')
 
-    ws("${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}/") {
-      withEnv(["GOPATH=${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}"]) {
-        env.PATH="${GOPATH}/bin:$PATH"
+    docker.image('golang:1.11-stretch').inside() {
+      stage('Checkout') {
+        echo 'Checking out SCM'
+        checkout scm
+      }
 
-        stage('Checkout') {
-          echo 'Checking out SCM'
-          checkout scm
-        }
+      stage('Pre Test') {
+        echo 'Pulling Dependencies'
 
-        stage('Pre Test') {
-          echo 'Pulling Dependencies'
+        sh 'go version'
+        sh 'make deps'
+      }
 
-          sh 'go version'
-          sh 'make deps'
-        }
+      stage('Test') {
+        sh 'make test'
+      }
 
-        stage('Test') {
-          sh 'make test'
-        }
-
-        stage('Build') {
-          sh 'make'
-        }
+      stage('Build') {
+        sh 'make'
       }
     }
   } catch (e) {
