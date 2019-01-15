@@ -126,8 +126,7 @@ func (d *Device) advertise() error {
 // as far as publishing a status change message goes
 // DB functionality (if any) probably wants to be closer to Update, tho
 func (d *Device) DeviceStateChange() error {
-	var err error
-	err = nil
+
 	gw := d.table.gateway
 	// db := d.table.db
 	// id := fmt.Sprintf("%s", d.NodeID)
