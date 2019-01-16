@@ -122,19 +122,39 @@ func (d *Device) advertise() error {
 	return gw.Publish(zigbee.DeviceJoined, d)
 }
 
-//  Device Status change is taking its cue from NewDevice
+//DeviceStateChange is taking its cue from NewDevice
 // as far as publishing a status change message goes
 // DB functionality (if any) probably wants to be closer to Update, tho
+// Testing reveals that this procedure panics if fed a null device
+// so now we wiil attempt to test for and do nothing upon that condition
+
+// gw:=d.table.gateway is no good. Can't be gw (compiler's responsibility)
+// and d must have been supplied to the method(but might not exist).
+// Most likely culprit is an unset table.gateway.
+
 func (d *Device) DeviceStateChange() error {
+	fmt.Println("DeviceStateChange called")
+	if (d != nil) && (d.NodeID != zigbee.NodeID{zigbee.UInt16{uint16(0)}}) {
+		fmt.Println("Setting up gateway table")
 
-	gw := d.table.gateway
-	// db := d.table.db
-	// id := fmt.Sprintf("%s", d.NodeID)
-	// d.table.devices.StateChange(id)?
-	return gw.Publish(zigbee.DeviceStateChange, &zigbee.DeviceStateChangeMessage{
-		EUI64: d.Endpoint.EUI64, State: d.State,
-	})
-
+		// So THIS statement is the actual villain of the piece!
+		gw := d.table.gateway
+		// db := d.table.db
+		// id := fmt.Sprintf("%s", d.NodeID)
+		// d.table.devices.StateChange(id)?
+		fmt.Println("Double-check that we are not surviving gw:=d.table.gateway")
+		fmt.Printf("eui64 = %v, state = %v before message build", d.Endpoint.EUI64, d.State)
+		dscm := zigbee.DeviceStateChangeMessage{
+			EUI64: d.Endpoint.EUI64, State: d.State}
+		// Still no joy.
+		// Starting to wonder if something, somewhere, is treating 0x030
+		// as an address. So lets see if either eui64 or state contain 0x30.
+		fmt.Printf("eui64 = %v, state = %v pre-publish", d.Endpoint.EUI64, d.State)
+		if (&dscm != nil) && (&d.State != nil) && (&d.Endpoint.EUI64 != nil) {
+			return gw.Publish(zigbee.DeviceStateChange, &dscm)
+		}
+	}
+	return nil
 }
 
 // Device list message publication
